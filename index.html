@@ -1,185 +1,327 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Poshn Proposal Generator | Final Master</title>
     <!-- Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
-        #root { height: 100%; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        
-        /* New Preview Engine Style (Centered, No Zoom/Scale clipping) */
-        .preview-wrapper {
-            background: #cbd5e1;
-            height: 100%;
-            overflow: auto;
-            padding: 40px;
-            display: flex;
-            justify-content: center;
-        }
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+      body {
+        font-family: "Inter", sans-serif;
+        background-color: #f8fafc;
+        margin: 0;
+        padding: 0;
+        height: 100vh;
+        overflow: hidden;
+      }
+      #root {
+        height: 100%;
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
 
-        .preview-frame {
-            background: white;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            border: none;
-            transition: width 0.3s ease;
-        }
+      /* New Preview Engine Style (Centered, No Zoom/Scale clipping) */
+      .preview-wrapper {
+        background: #cbd5e1;
+        height: 100%;
+        overflow: auto;
+        padding: 40px;
+        display: flex;
+        justify-content: center;
+      }
 
-        .laptop-frame { width: 1280px; height: 2000px; } 
-        .mobile-frame { width: 375px; height: 4000px; }
+      .preview-frame {
+        background: white;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        border: none;
+        transition: width 0.3s ease;
+      }
+
+      .laptop-frame {
+        width: 1280px;
+        height: 2000px;
+      }
+      .mobile-frame {
+        width: 375px;
+        height: 4000px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useMemo } = React;
-        
-        const Icon = ({ name, className = "" }) => {
-            return <i className={"fa-solid fa-" + name + " " + className}></i>;
+      const { useState, useMemo } = React;
+
+      const Icon = ({ name, className = "" }) => {
+        return <i className={"fa-solid fa-" + name + " " + className}></i>;
+      };
+
+      const App = () => {
+        const [config, setConfig] = useState({
+          buyerName: "Global Foods Inc.",
+          contactEmail: "rishabhsharma@poshn.co",
+          showWorkingModel: true,
+          workingModelDays: "3rd",
+          selectedPillars: [
+            "Vendor Management",
+            "Reconciliation",
+            "Immediate Vendor Payments",
+            "Compliances",
+          ],
+          selectedUSPs: [
+            "3-7 Days TAT",
+            "Zero Training",
+            "Easy Migration",
+            "365 Day Support",
+            "E2E Solution",
+            "Invoice Tracking",
+          ],
+          selectedGovernance: [
+            "Master Service Agreements",
+            "Indemnity Bonds",
+            "Security Cheques (Buyer to Poshn)",
+          ],
+          selectedExclusions: [
+            "Quality Assurance: Responsibility of Buyer.",
+            "Order Fulfillment: Aligned by Buyer/Vendor.",
+          ],
+          selectedTiers: ["Only Tech", "Tech + KAM", "Capital Support"],
+          selectedStories: ["Haryana Basmati", "Alwar Cost-Effectiveness"],
+        });
+
+        const [activeTab, setActiveTab] = useState("editor");
+        const [viewport, setViewport] = useState("laptop");
+
+        const PILLAR_DEFS = {
+          "Vendor Management": {
+            icon: "users-gear",
+            desc: "Onboarding and relationship management for stable supply.",
+          },
+          Reconciliation: {
+            icon: "calculator",
+            desc: "Ensuring weight, quality, and billing accuracy at every step.",
+          },
+          "Immediate Vendor Payments": {
+            icon: "hand-holding-dollar",
+            desc: "Ensuring immediate liquidity for vendors to maintain chain velocity.",
+          },
+          Compliances: {
+            icon: "shield-halved",
+            desc: "Rigorous management of supplier KYC & digital invoices.",
+          },
         };
 
-        const App = () => {
-            const [config, setConfig] = useState({
-                buyerName: 'Global Foods Inc.',
-                contactEmail: 'rishabhsharma@poshn.co',
-                showWorkingModel: true,
-                workingModelDays: '3rd',
-                selectedPillars: ['Vendor Management', 'Reconciliation', 'Immediate Vendor Payments', 'Compliances'],
-                selectedUSPs: ['3-7 Days TAT', 'Zero Training', 'Easy Migration', '365 Day Support', 'E2E Solution', 'Invoice Tracking'],
-                selectedGovernance: [
-                    'Master Service Agreements',
-                    'Indemnity Bonds',
-                    'Security Cheques (Buyer to Poshn)'
-                ],
-                selectedExclusions: [
-                    'Quality Assurance: Responsibility of Buyer.',
-                    'Order Fulfillment: Aligned by Buyer/Vendor.'
-                ],
-                selectedTiers: ['Only Tech', 'Tech + KAM', 'Capital Support'],
-                selectedStories: ['Haryana Basmati', 'Alwar Cost-Effectiveness']
-            });
+        const USP_DEFS = {
+          "3-7 Days TAT": {
+            icon: "bolt",
+            desc: "Rapid onboarding and setup to get your procurement running in under a week.",
+          },
+          "Zero Training": {
+            icon: "graduation-cap",
+            desc: "User-intuitive interface requires no staff training or operational learning curve.",
+          },
+          "Easy Migration": {
+            icon: "database",
+            desc: "Seamless transition with no hassle of manual data migration or downtime.",
+          },
+          "365 Day Support": {
+            icon: "calendar-check",
+            desc: "Uninterrupted payment capability 365 days a year to maintain chain velocity.",
+          },
+          "E2E Solution": {
+            icon: "infinity",
+            desc: "A unified procurement process solution. No external software linking required.",
+          },
+          "Invoice Tracking": {
+            icon: "magnifying-glass-chart",
+            desc: "Granular invoice-level tracking available for complete audit transparency.",
+          },
+        };
 
-            const [activeTab, setActiveTab] = useState('editor');
-            const [viewport, setViewport] = useState('laptop');
+        const GOVERNANCE_DEFS = {
+          "Master Service Agreements": "file-signature",
+          "Indemnity Bonds": "file-shield",
+          "Security Cheques (Buyer to Poshn)": "money-check-dollar",
+        };
 
-            const PILLAR_DEFS = {
-                'Vendor Management': { icon: 'users-gear', desc: 'Onboarding and relationship management for stable supply.' },
-                'Reconciliation': { icon: 'calculator', desc: 'Ensuring weight, quality, and billing accuracy at every step.' },
-                'Immediate Vendor Payments': { icon: 'hand-holding-dollar', desc: 'Ensuring immediate liquidity for vendors to maintain chain velocity.' },
-                'Compliances': { icon: 'shield-halved', desc: 'Rigorous management of supplier KYC & digital invoices.' }
-            };
+        const EXCLUSION_DEFS = {
+          "Quality Assurance: Responsibility of Buyer.": "circle-xmark",
+          "Order Fulfillment: Aligned by Buyer/Vendor.": "circle-xmark",
+        };
 
-            const USP_DEFS = {
-                '3-7 Days TAT': { icon: 'bolt', desc: 'Rapid onboarding and setup to get your procurement running in under a week.' },
-                'Zero Training': { icon: 'graduation-cap', desc: 'User-intuitive interface requires no staff training or operational learning curve.' },
-                'Easy Migration': { icon: 'database', desc: 'Seamless transition with no hassle of manual data migration or downtime.' },
-                '365 Day Support': { icon: 'calendar-check', desc: 'Uninterrupted payment capability 365 days a year to maintain chain velocity.' },
-                'E2E Solution': { icon: 'infinity', desc: 'A unified procurement process solution. No external software linking required.' },
-                'Invoice Tracking': { icon: 'magnifying-glass-chart', desc: 'Granular invoice-level tracking available for complete audit transparency.' }
-            };
+        const TIER_DEFS = {
+          "Only Tech": {
+            rate: "0.1%",
+            min: "Min ₹50K / Month",
+            featured: false,
+            features: [
+              "Ops automation platform",
+              "Auto invoicing & Ledgers",
+              "Digital KYC records",
+              "Payments processing",
+              "Instant PO generation",
+            ],
+          },
+          "Tech + KAM": {
+            rate: "0.2%",
+            min: "Min ₹1 Lakh / Month",
+            featured: false,
+            features: [
+              "All in tech plan included",
+              "Dedicated Human Resource",
+              "Vendor followup management",
+              "Zero staff training required",
+              "PO consolidation service",
+            ],
+          },
+          "Capital Support": {
+            rate: "0.06%",
+            secondaryRate: "0.08%",
+            min: "Capital ROI / Day",
+            featured: true,
+            features: [
+              "365 Days Payment Support",
+              "Same Day Settlement",
+              "Priority TAT: 3-4 Hrs",
+              "Simple Process as UPI",
+              "Min duration: 7 Days",
+            ],
+          },
+        };
 
-            const GOVERNANCE_DEFS = {
-                'Master Service Agreements': 'file-signature',
-                'Indemnity Bonds': 'file-shield',
-                'Security Cheques (Buyer to Poshn)': 'money-check-dollar'
-            };
+        const STORY_DEFS = {
+          "Haryana Basmati": {
+            title: "The Haryana Growth Story",
+            content:
+              "A <strong>Haryana-based top basmati exporter</strong> started with a <strong>₹2 Cr</strong> procurement limit. By utilizing Poshn's services, they scaled to a <strong>₹12 Cr</strong> limit within just 15 months.",
+            badge: "6X Procurement Capacity",
+          },
+          "Alwar Cost-Effectiveness": {
+            title: "The Alwar Efficiency Story",
+            content:
+              "An <strong>Alwar-based plant</strong> significantly reduced manual workload by digitizing procurement. They were able to <strong>free up 10 human resources</strong> for core operations using Poshn Tech.",
+            badge: "INR 52 Lakhs Annually Saved",
+          },
+        };
 
-            const EXCLUSION_DEFS = {
-                'Quality Assurance: Responsibility of Buyer.': 'circle-xmark',
-                'Order Fulfillment: Aligned by Buyer/Vendor.': 'circle-xmark'
-            };
-
-            const TIER_DEFS = {
-                'Only Tech': {
-                    rate: '0.1%', min: 'Min ₹50K / Month', featured: false,
-                    features: ['Ops automation platform', 'Auto invoicing & Ledgers', 'Digital KYC records', 'Payments processing', 'Instant PO generation']
-                },
-                'Tech + KAM': {
-                    rate: '0.2%', min: 'Min ₹1 Lakh / Month', featured: false,
-                    features: ['All in tech plan included', 'Dedicated Human Resource', 'Vendor followup management', 'Zero staff training required', 'PO consolidation service']
-                },
-                'Capital Support': {
-                    rate: '0.06%', secondaryRate: '0.08%', min: 'Capital ROI / Day', featured: true,
-                    features: ['365 Days Payment Support', 'Same Day Settlement', 'Priority TAT: 3-4 Hrs', 'Simple Process as UPI', 'Min duration: 7 Days']
-                }
-            };
-
-            const STORY_DEFS = {
-                'Haryana Basmati': {
-                    title: 'The Haryana Growth Story',
-                    content: 'A <strong>Haryana-based top basmati exporter</strong> started with a <strong>₹2 Cr</strong> procurement limit. By utilizing Poshn\'s services, they scaled to a <strong>₹12 Cr</strong> limit within just 15 months.',
-                    badge: '6X Procurement Capacity'
-                },
-                'Alwar Cost-Effectiveness': {
-                    title: 'The Alwar Efficiency Story',
-                    content: 'An <strong>Alwar-based plant</strong> significantly reduced manual workload by digitizing procurement. They were able to <strong>free up 10 human resources</strong> for core operations using Poshn Tech.',
-                    badge: 'INR 52 Lakhs Annually Saved'
-                }
-            };
-
-            const finalHTML = useMemo(() => {
-                const pillarsHtml = config.selectedPillars.map(p => `
+        const finalHTML = useMemo(() => {
+          const pillarsHtml = config.selectedPillars
+            .map(
+              (p) => `
             <div class="tile stagger-child">
                 <div class="icon-box"><i class="fa-solid fa-${PILLAR_DEFS[p].icon}"></i></div>
                 <div class="text-box">
                     <h3>${p}</h3>
                     <p>${PILLAR_DEFS[p].desc}</p>
                 </div>
-            </div>`).join('');
+            </div>`,
+            )
+            .join("");
 
-                const uspsHtml = config.selectedUSPs.map(u => `
+          const uspsHtml = config.selectedUSPs
+            .map(
+              (u) => `
             <div class="tile stagger-child">
                 <div class="icon-box"><i class="fa-solid fa-${USP_DEFS[u].icon}"></i></div>
                 <div class="text-box">
                     <h3>${u}</h3>
                     <p>${USP_DEFS[u].desc}</p>
                 </div>
-            </div>`).join('');
+            </div>`,
+            )
+            .join("");
 
-                const govHtml = config.selectedGovernance.map(g => `
-                        <div class="comp-item"><i class="fa-solid fa-${GOVERNANCE_DEFS[g] || 'check'}"></i> <span>${g.replace('Buyer', config.buyerName)}</span></div>`).join('');
-                
-                const exclHtml = config.selectedExclusions.map(e => `
-                        <div class="comp-item"><i class="fa-solid fa-${EXCLUSION_DEFS[e] || 'xmark'}"></i> <span>${e.replace('Buyer', config.buyerName)}</span></div>`).join('');
+          const govHtml = config.selectedGovernance
+            .map(
+              (g) => `
+                        <div class="comp-item"><i class="fa-solid fa-${
+                          GOVERNANCE_DEFS[g] || "check"
+                        }"></i> <span>${g.replace(
+                          "Buyer",
+                          config.buyerName,
+                        )}</span></div>`,
+            )
+            .join("");
 
-                const tiersHtml = config.selectedTiers.map(t => {
-                    const d = TIER_DEFS[t];
-                    return `
-            <div class="tier-card stagger-child ${d.featured ? 'featured' : ''}">
+          const exclHtml = config.selectedExclusions
+            .map(
+              (e) => `
+                        <div class="comp-item"><i class="fa-solid fa-${
+                          EXCLUSION_DEFS[e] || "xmark"
+                        }"></i> <span>${e.replace(
+                          "Buyer",
+                          config.buyerName,
+                        )}</span></div>`,
+            )
+            .join("");
+
+          const tiersHtml = config.selectedTiers
+            .map((t) => {
+              const d = TIER_DEFS[t];
+              return `
+            <div class="tier-card stagger-child ${
+              d.featured ? "featured" : ""
+            }">
                 <h3>${t}</h3>
                 <div class="tier-rate">
-                    ${d.rate}${d.secondaryRate ? `<span style="font-size: 0.45em; vertical-align: middle; margin-left: 5px; opacity: 0.7; font-weight: 400;"> - ${d.secondaryRate}</span>` : ''}
+                    ${d.rate}${
+                      d.secondaryRate
+                        ? `<span style="font-size: 0.45em; vertical-align: middle; margin-left: 5px; opacity: 0.7; font-weight: 400;"> - ${d.secondaryRate}</span>`
+                        : ""
+                    }
                 </div>
-                <div class="tier-min" ${d.featured ? 'style="color: #fff; opacity: 0.8;"' : ''}>${d.min}</div>
+                <div class="tier-min" ${
+                  d.featured ? 'style="color: #fff; opacity: 0.8;"' : ""
+                }>${d.min}</div>
                 <ul class="feature-list" style="list-style:none;">
-                    ${d.features.map(f => `<li><i class="fa-solid fa-check" style="color:var(--accent-tan); margin-right:8px;"></i> ${f}</li>`).join('')}
+                    ${d.features
+                      .map(
+                        (f) =>
+                          `<li><i class="fa-solid fa-check" style="color:var(--accent-tan); margin-right:8px;"></i> ${f}</li>`,
+                      )
+                      .join("")}
                 </ul>
-                ${t !== 'Only Tech' ? '<div class="tcs-note">0.1% TCS Applicable</div>' : ''}
+                ${
+                  t !== "Only Tech"
+                    ? '<div class="tcs-note">0.1% TCS Applicable</div>'
+                    : ""
+                }
             </div>`;
-                }).join('');
+            })
+            .join("");
 
-                const storiesHtml = config.selectedStories.map(s => {
-                    const d = STORY_DEFS[s];
-                    return `
+          const storiesHtml = config.selectedStories
+            .map((s) => {
+              const d = STORY_DEFS[s];
+              return `
             <div class="story-card stagger-child" style="background: var(--white); padding: 35px; border-radius: 30px; border: 1px solid var(--accent-muted); flex: 1 1 45%;">
                 <div class="badge" style="background: var(--accent-tan); color: white; margin-bottom: 20px; font-size: 1.1rem; padding: 10px 20px; border-radius: 10px; width: fit-content; display: inline-block; font-weight: 800; box-shadow: 0 4px 12px rgba(212, 163, 115, 0.3); text-transform: uppercase;">${d.badge}</div>
                 <h3 style="font-size: 24px; margin-bottom: 15px;">${d.title}</h3>
                 <p style="font-size: 16px; line-height: 1.6; opacity: 0.8;">${d.content}</p>
             </div>`;
-                }).join('');
+            })
+            .join("");
 
-                const workingModelSlide = config.showWorkingModel ? `
+          const workingModelSlide = config.showWorkingModel
+            ? `
     <div class="slide-container reveal">
         <h2 class="slide-title">The Working Model</h2>
         <p style="margin-top: -15px;">Seamless "Bill-to-Ship-to" Execution for ${config.buyerName}</p>
@@ -207,13 +349,14 @@
                 <p style="margin: 0; font-weight: 600; font-size: 15px;"><i class="fa-solid fa-circle-info highlight"></i> Operational Note: 10% margin money provided by ${config.buyerName} to Poshn upon vehicle delivery.</p>
             </div>
         </div>
-    </div>` : '';
+    </div>`
+            : "";
 
-                return `<!DOCTYPE html>
+          return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Poshn Strategic Proposal - ${config.buyerName}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -222,18 +365,21 @@
     <style>
         :root { --bg-cream: #FFFBF2; --text-dark: #42210B; --accent-tan: #D4A373; --accent-muted: #E8D8C3; --white: #FFFFFF; --font-title: 'Urbanist', sans-serif; --font-body: 'Inter', sans-serif; }
         * { box-sizing: border-box; }
-        body { background-color: #F3F4F6; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: 20px 0; font-family: var(--font-body); color: var(--text-dark); overflow-x: hidden; }
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; height: 100%; overflow-x: hidden; }
+        body { background-color: #F3F4F6; margin: 0; display: flex; flex-direction: column; align-items: center; gap: 20px; padding: calc(20px + env(safe-area-inset-top, 0px)) env(safe-area-inset-right, 0px) calc(20px + env(safe-area-inset-bottom, 0px)) env(safe-area-inset-left, 0px); min-height: 100%; font-family: var(--font-body); color: var(--text-dark); overflow-x: hidden; }
         
-        .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
-        .reveal.active { opacity: 1; transform: translateY(0); }
-        .stagger-child { opacity: 0; transform: translateY(20px); transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
-        .active .stagger-child { opacity: 1; transform: translateY(0); }
-        .active .stagger-child:nth-child(1) { transition-delay: 0.1s; }
-        .active .stagger-child:nth-child(2) { transition-delay: 0.2s; }
-        .active .stagger-child:nth-child(3) { transition-delay: 0.3s; }
-        .active .stagger-child:nth-child(4) { transition-delay: 0.4s; }
-        .active .stagger-child:nth-child(5) { transition-delay: 0.5s; }
-        .active .stagger-child:nth-child(6) { transition-delay: 0.6s; }
+        .reveal { opacity: 1; transform: none; }
+        .stagger-child { opacity: 1; transform: none; }
+        .js .reveal { opacity: 0; transform: translateY(40px); transition: all 0.8s cubic-bezier(0.22, 1, 0.36, 1); }
+        .js .reveal.active { opacity: 1; transform: translateY(0); }
+        .js .stagger-child { opacity: 0; transform: translateY(20px); transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
+        .js .active .stagger-child { opacity: 1; transform: translateY(0); }
+        .js .active .stagger-child:nth-child(1) { transition-delay: 0.1s; }
+        .js .active .stagger-child:nth-child(2) { transition-delay: 0.2s; }
+        .js .active .stagger-child:nth-child(3) { transition-delay: 0.3s; }
+        .js .active .stagger-child:nth-child(4) { transition-delay: 0.4s; }
+        .js .active .stagger-child:nth-child(5) { transition-delay: 0.5s; }
+        .js .active .stagger-child:nth-child(6) { transition-delay: 0.6s; }
 
         .slide-container { width: 95%; max-width: 1280px; min-height: 720px; background-color: var(--bg-cream); position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 40px 60px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 12px; margin-bottom: 40px; }
         .slide-container::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: var(--accent-muted); border-radius: 50%; opacity: 0.3; z-index: 0; }
@@ -247,12 +393,10 @@
         .centered-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; flex-grow: 1; }
 
-        .tile-grid { display: grid; grid-template-columns: repeat(${config.selectedPillars.length <= 4 ? 4 : 3}, 1fr); gap: 15px; width: 100%; margin-top: 15px; }
+        .tile-grid { display: grid; grid-template-columns: repeat(${
+          config.selectedPillars.length <= 4 ? 4 : 3
+        }, 1fr); gap: 15px; width: 100%; margin-top: 15px; }
         .slide-container:nth-of-type(7) .tile-grid { grid-template-columns: repeat(3, 1fr); }
-        
-        .tile-grid:has(.tile:nth-child(1):last-child) { grid-template-columns: 1fr; }
-        .tile-grid:has(.tile:nth-child(2):last-child) { grid-template-columns: 1fr 1fr; }
-        .tile-grid:has(.tile:nth-child(3):last-child) { grid-template-columns: 1fr 1fr 1fr; }
 
         .tile, .tier-card { background: var(--white); padding: 25px 20px; border-radius: 20px; border: 1px solid var(--accent-muted); display: flex; flex-direction: column; align-items: center; text-align: center; transition: transform 0.3s ease; }
         .tile h3 { min-height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 0 10px; }
@@ -289,10 +433,17 @@
 
         .story-container { display: flex; flex-wrap: wrap; gap: 20px; width: 100%; margin-top: 20px; }
 
+        @media (max-width: 1024px) {
+            .slide-container { width: calc(100% - 20px); min-height: unset; padding: 36px 28px; margin-bottom: 20px; }
+            .two-column { gap: 24px; }
+            .tile-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .commercial-grid { gap: 15px; }
+        }
+
         @media (max-width: 768px) {
-            body { padding: 0; gap: 0; }
+            body { padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px); gap: 0; }
             .slide-container { width: 100%; border-radius: 0; min-height: unset; height: auto; padding: 60px 24px; margin-bottom: 0; border-bottom: 2px solid var(--accent-muted); text-align: left !important; }
-            .slide-container:nth-of-type(2).reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+            .js .slide-container:nth-of-type(2).reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
             .centered-content { align-items: flex-start !important; text-align: left !important; }
             h2.slide-title { font-size: 32px; width: 100%; text-align: left !important; }
             .two-column { grid-template-columns: 1fr; gap: 20px; text-align: left !important; }
@@ -309,9 +460,34 @@
             .comp-container { grid-template-columns: 1fr; gap: 15px; }
         }
 
+        @media (max-width: 480px) {
+            .slide-container { padding: 48px 18px; }
+            h1 { font-size: clamp(36px, 12vw, 52px); }
+            h2.slide-title { font-size: 28px; }
+            .comp-box, .tier-card, .tile { padding: 18px; }
+            .timeline-step { gap: 16px; }
+            .step-num { width: 48px; height: 48px; font-size: 16px; }
+        }
+
+        @supports (-webkit-touch-callout: none) {
+            body { min-height: -webkit-fill-available; }
+            .slide-container { min-height: calc(100svh - 40px); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+            .js .reveal, .js .stagger-child { opacity: 1 !important; transform: none !important; }
+        }
+
         @media print {
-            body { background: white; padding: 0; }
-            .slide-container { box-shadow: none; border-radius: 0; margin: 0; border: none; page-break-after: always; min-height: 100vh; }
+            html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
+            body { display: block; color-adjust: exact; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .slide-container { width: 100% !important; max-width: none !important; box-shadow: none !important; border-radius: 0 !important; margin: 0 !important; border: none !important; page-break-after: always; break-after: page; break-inside: avoid; min-height: 100vh; padding: 20mm 12mm !important; }
+            .slide-container:last-child { page-break-after: auto; break-after: auto; }
+            .slide-container::before, .slide-container::after { display: none !important; }
+            .reveal, .stagger-child { opacity: 1 !important; transform: none !important; }
+            .tile, .tier-card, .comp-box, .story-card, .stat-card { break-inside: avoid; page-break-inside: avoid; }
+            .timeline-box { break-inside: avoid; page-break-inside: avoid; }
         }
         .highlight { color: var(--accent-tan); font-weight: 700; }
         .badge { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: 700; font-size: 11px; margin-bottom: 10px; }
@@ -322,7 +498,9 @@
         <div class="centered-content">
             <div class="badge" style="background: var(--accent-muted);">STRATEGIC PARTNERSHIP</div>
             <h1>Your Integrated <br><span class="highlight">Procurement</span> Arm</h1>
-            <p style="margin-top: 30px; opacity: 0.8;">A Partner Proposal for <strong>${config.buyerName}</strong></p>
+            <p style="margin-top: 30px; opacity: 0.8;">A Partner Proposal for <strong>${
+              config.buyerName
+            }</strong></p>
         </div>
     </div>
 
@@ -420,201 +598,425 @@
         <div class="centered-content">
             <h1 style="margin-bottom: 20px;">Thank <span class="highlight">You</span></h1>
             <p style="font-size: 22px;">Transforming the Food Industry Supply Chain.</p>
-            <div style="margin-top: 40px; font-family: var(--font-title); font-size: 18px; font-weight: 600;">www.poshn.co | ${config.contactEmail}</div>
+            <div style="margin-top: 40px; font-family: var(--font-title); font-size: 18px; font-weight: 600;">www.poshn.co | ${
+              config.contactEmail
+            }</div>
         </div>
     </div>
 
     <script>
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) entry.target.classList.add('active');
-                else entry.target.classList.remove('active');
-            });
-        }, { threshold: 0.15 });
-        document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+        document.documentElement.classList.add('js');
+        const revealEls = document.querySelectorAll('.reveal');
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) entry.target.classList.add('active');
+                    else entry.target.classList.remove('active');
+                });
+            }, { threshold: 0.15 });
+            revealEls.forEach(el => observer.observe(el));
+        } else {
+            revealEls.forEach(el => el.classList.add('active'));
+        }
     <\/script>
 </body>
 </html>`;
-            }, [config]);
+        }, [config]);
 
-            const handleDownloadHTML = () => {
-                const blob = new Blob([finalHTML], { type: 'text/html' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Poshn_Proposal_${config.buyerName.replace(/\s+/g, '_')}.html`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            };
-
-            const toggleItem = (listKey, item) => {
-                setConfig(prev => ({
-                    ...prev,
-                    [listKey]: prev[listKey].includes(item) ? prev[listKey].filter(i => i !== item) : [...prev[listKey], item]
-                }));
-            };
-
-            return (
-                <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
-                    {/* Fixed Main Navbar */}
-                    <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between z-[300] gap-4 md:gap-0 shadow-sm shrink-0">
-                        <div className="flex items-center gap-3 w-full md:w-auto">
-                            <div className="bg-[#42210B] p-2 rounded-lg text-[#D4A373]"><Icon name="bolt" /></div>
-                            <h1 className="font-bold text-lg text-slate-800 tracking-tight whitespace-nowrap">Poshn Generator</h1>
-                        </div>
-                        <div className="flex bg-slate-100 p-1 rounded-lg w-full md:w-auto overflow-x-auto">
-                            <button onClick={() => setActiveTab('editor')} className={"flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-semibold transition-all " + (activeTab === 'editor' ? 'bg-white text-[#42210B] shadow-sm' : 'text-slate-500')}>Config</button>
-                            <button onClick={() => setActiveTab('preview')} className={"flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-semibold transition-all " + (activeTab === 'preview' ? 'bg-white text-[#42210B] shadow-sm' : 'text-slate-500')}>Preview</button>
-                        </div>
-                    </header>
-
-                    <main className="flex-1 overflow-hidden relative">
-                        {/* CONFIG PANEL */}
-                        <div className={"h-full overflow-y-auto p-4 md:p-8 custom-scrollbar " + (activeTab === 'editor' ? 'block' : 'hidden')}>
-                            <div className="max-w-4xl mx-auto space-y-8 pb-24 pt-4">
-                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="user" className="text-[#D4A373]" /> 1. Identity</h2>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase text-slate-400">Client Name</label>
-                                            <input type="text" value={config.buyerName} onChange={(e) => setConfig({...config, buyerName: e.target.value})} className="w-full bg-slate-50 border p-3 rounded-xl outline-none focus:ring-2 focus:ring-[#D4A373]" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase text-slate-400">Support Email</label>
-                                            <input type="email" value={config.contactEmail} onChange={(e) => setConfig({...config, contactEmail: e.target.value})} className="w-full bg-slate-50 border p-3 rounded-xl outline-none focus:ring-2 focus:ring-[#D4A373]" />
-                                        </div>
-                                    </div>
-                                </section>
-
-                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="layer-group" className="text-[#D4A373]" /> 2. Service Pillars</h2>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {Object.keys(PILLAR_DEFS).map(p => (
-                                            <button key={p} onClick={() => toggleItem('selectedPillars', p)} className={"p-4 rounded-2xl border text-left transition-all " + (config.selectedPillars.includes(p) ? 'border-[#D4A373] bg-[#FFFBF2] ring-1 ring-[#D4A373]' : 'border-slate-100')}>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-sm font-bold">{p}</span>
-                                                    {config.selectedPillars.includes(p) && <Icon name="check" className="text-[#D4A373]" />}
-                                                </div>
-                                                <p className="text-[11px] text-slate-500 leading-tight">{PILLAR_DEFS[p].desc}</p>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="timeline" className="text-[#D4A373]" /> 3. Working Model</h2>
-                                    <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border mb-4">
-                                        <p className="font-bold text-sm">Include Working Model Slide</p>
-                                        <input type="checkbox" checked={config.showWorkingModel} onChange={(e) => setConfig({...config, showWorkingModel: e.target.checked})} className="w-6 h-6 accent-[#D4A373]" />
-                                    </div>
-                                    {config.showWorkingModel && (
-                                        <div className="p-4 border-l-4 border-[#D4A373] bg-[#FFFBF2]/30 rounded-r-2xl flex items-center gap-3">
-                                            <span className="text-sm">Settlement on</span>
-                                            <input type="text" value={config.workingModelDays} onChange={(e) => setConfig({...config, workingModelDays: e.target.value})} className="w-20 border p-1.5 rounded-lg text-center font-bold" />
-                                            <span className="text-sm">day of quality report.</span>
-                                        </div>
-                                    )}
-                                </section>
-
-                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="star" className="text-[#D4A373]" /> 4. Success Stories</h2>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {Object.keys(STORY_DEFS).map(s => (
-                                            <button key={s} onClick={() => toggleItem('selectedStories', s)} className={"p-4 rounded-2xl border text-left transition-all " + (config.selectedStories.includes(s) ? 'border-[#D4A373] bg-[#FFFBF2] ring-1 ring-[#D4A373]' : 'border-slate-100')}>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-sm font-bold">{s}</span>
-                                                    {config.selectedStories.includes(s) && <Icon name="check" className="text-[#D4A373]" />}
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="award" className="text-[#D4A373]" /> 5. The Poshn Edge</h2>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        {Object.keys(USP_DEFS).map(u => (
-                                            <button key={u} onClick={() => toggleItem('selectedUSPs', u)} className={"p-4 rounded-2xl border text-left transition-all " + (config.selectedUSPs.includes(u) ? 'border-[#D4A373] bg-[#FFFBF2] ring-1 ring-[#D4A373]' : 'border-slate-100')}>
-                                                <div className="flex items-center justify-between mb-2">
-                                                    <span className="text-sm font-bold">{u}</span>
-                                                    {config.selectedUSPs.includes(u) && <Icon name="check" className="text-[#D4A373]" />}
-                                                </div>
-                                                <p className="text-[11px] text-slate-500 leading-tight">{USP_DEFS[u].desc}</p>
-                                            </button>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="building-shield" className="text-[#D4A373]" /> 6. Governance</h2>
-                                    <div className="space-y-2">
-                                        {Object.keys(GOVERNANCE_DEFS).map(g => (
-                                            <button key={g} onClick={() => toggleItem('selectedGovernance', g)} className={"w-full p-3 text-[11px] border rounded-xl text-left transition-all flex items-center gap-3 " + (config.selectedGovernance.includes(g) ? 'bg-slate-100 border-slate-300 font-bold' : 'opacity-40')}>
-                                                <Icon name={config.selectedGovernance.includes(g) ? "check-square" : "square"} />
-                                                {g.replace('Buyer', config.buyerName)}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="ban" className="text-[#D4A373]" /> 7. Exclusions</h2>
-                                    <div className="space-y-2">
-                                        {Object.keys(EXCLUSION_DEFS).map(e => (
-                                            <button key={e} onClick={() => toggleItem('selectedExclusions', e)} className={"w-full p-3 text-[11px] border rounded-xl text-left transition-all flex items-center gap-3 " + (config.selectedExclusions.includes(e) ? 'bg-[#42210B] text-white font-bold' : 'opacity-40')}>
-                                                <Icon name={config.selectedExclusions.includes(e) ? "check-square" : "square"} />
-                                                {e.replace('Buyer', config.buyerName)}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </section>
-
-                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="hand-holding-dollar" className="text-[#D4A373]" /> 8. Commercials</h2>
-                                    <div className="flex flex-wrap gap-3">
-                                        {Object.keys(TIER_DEFS).map(t => (
-                                            <button key={t} onClick={() => toggleItem('selectedTiers', t)} className={"px-4 py-3 md:px-6 md:py-4 border-2 rounded-2xl text-sm font-bold transition-all " + (config.selectedTiers.includes(t) ? 'bg-[#D4A373] text-white border-[#D4A373] shadow-lg shadow-[#D4A373]/20' : 'border-slate-100 text-slate-400')}>{t}</button>
-                                        ))}
-                                    </div>
-                                </section>
-                            </div>
-                        </div>
-
-                        {/* PREVIEW TAB */}
-                        <div className={"h-full flex flex-col bg-slate-200 " + (activeTab === 'preview' ? 'flex' : 'hidden')}>
-                            <div className="bg-white border-b border-slate-300 p-4 flex items-center justify-between shrink-0 shadow-sm z-50">
-                                <div className="flex bg-slate-100 p-1 rounded-lg">
-                                    <button onClick={() => setViewport('laptop')} className={"px-6 py-1.5 rounded md:text-sm font-bold transition-all " + (viewport === 'laptop' ? 'bg-white shadow-sm' : 'text-slate-400')}>Laptop</button>
-                                    <button onClick={() => setViewport('mobile')} className={"px-6 py-1.5 rounded md:text-sm font-bold transition-all " + (viewport === 'mobile' ? 'bg-white shadow-sm' : 'text-slate-400')}>Mobile</button>
-                                </div>
-                                <button onClick={handleDownloadHTML} className="bg-[#42210B] px-6 py-2 rounded-lg text-sm font-bold text-white hover:opacity-90 transition-all flex items-center gap-2">
-                                    <Icon name="download" className="text-[#D4A373]" /> Download HTML
-                                </button>
-                            </div>
-                            <div className="flex-1 overflow-hidden">
-                                <div className="preview-wrapper custom-scrollbar">
-                                    <iframe 
-                                        srcDoc={finalHTML} 
-                                        className={"preview-frame " + (viewport === 'mobile' ? 'mobile-frame' : 'laptop-frame')}
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </main>
-
-                    <footer className="bg-white border-t border-slate-200 px-4 py-2 shrink-0 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest z-[120]">
-                         <div>{config.buyerName} • Build Ready</div>
-                         <div>v2.8 FINAL MASTER • Logic Sync Perfected</div>
-                    </footer>
-                </div>
-            );
+        const handleDownloadHTML = () => {
+          const blob = new Blob([finalHTML], { type: "text/html" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `Poshn_Proposal_${config.buyerName.replace(
+            /\s+/g,
+            "_",
+          )}.html`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
         };
 
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(<App />);
+        const toggleItem = (listKey, item) => {
+          setConfig((prev) => ({
+            ...prev,
+            [listKey]: prev[listKey].includes(item)
+              ? prev[listKey].filter((i) => i !== item)
+              : [...prev[listKey], item],
+          }));
+        };
+
+        return (
+          <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
+            {/* Fixed Main Navbar */}
+            <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between z-[300] gap-4 md:gap-0 shadow-sm shrink-0">
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="bg-[#42210B] p-2 rounded-lg text-[#D4A373]">
+                  <Icon name="bolt" />
+                </div>
+                <h1 className="font-bold text-lg text-slate-800 tracking-tight whitespace-nowrap">
+                  Poshn Generator
+                </h1>
+              </div>
+              <div className="flex bg-slate-100 p-1 rounded-lg w-full md:w-auto overflow-x-auto">
+                <button
+                  onClick={() => setActiveTab("editor")}
+                  className={
+                    "flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-semibold transition-all " +
+                    (activeTab === "editor"
+                      ? "bg-white text-[#42210B] shadow-sm"
+                      : "text-slate-500")
+                  }
+                >
+                  Config
+                </button>
+                <button
+                  onClick={() => setActiveTab("preview")}
+                  className={
+                    "flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-semibold transition-all " +
+                    (activeTab === "preview"
+                      ? "bg-white text-[#42210B] shadow-sm"
+                      : "text-slate-500")
+                  }
+                >
+                  Preview
+                </button>
+              </div>
+            </header>
+
+            <main className="flex-1 overflow-hidden relative">
+              {/* CONFIG PANEL */}
+              <div
+                className={
+                  "h-full overflow-y-auto p-4 md:p-8 custom-scrollbar " +
+                  (activeTab === "editor" ? "block" : "hidden")
+                }
+              >
+                <div className="max-w-4xl mx-auto space-y-8 pb-24 pt-4">
+                  <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800">
+                      <Icon name="user" className="text-[#D4A373]" /> 1.
+                      Identity
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase text-slate-400">
+                          Client Name
+                        </label>
+                        <input
+                          type="text"
+                          value={config.buyerName}
+                          onChange={(e) =>
+                            setConfig({ ...config, buyerName: e.target.value })
+                          }
+                          className="w-full bg-slate-50 border p-3 rounded-xl outline-none focus:ring-2 focus:ring-[#D4A373]"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase text-slate-400">
+                          Support Email
+                        </label>
+                        <input
+                          type="email"
+                          value={config.contactEmail}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              contactEmail: e.target.value,
+                            })
+                          }
+                          className="w-full bg-slate-50 border p-3 rounded-xl outline-none focus:ring-2 focus:ring-[#D4A373]"
+                        />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800">
+                      <Icon name="layer-group" className="text-[#D4A373]" /> 2.
+                      Service Pillars
+                    </h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      {Object.keys(PILLAR_DEFS).map((p) => (
+                        <button
+                          key={p}
+                          onClick={() => toggleItem("selectedPillars", p)}
+                          className={
+                            "p-4 rounded-2xl border text-left transition-all " +
+                            (config.selectedPillars.includes(p)
+                              ? "border-[#D4A373] bg-[#FFFBF2] ring-1 ring-[#D4A373]"
+                              : "border-slate-100")
+                          }
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-bold">{p}</span>
+                            {config.selectedPillars.includes(p) && (
+                              <Icon name="check" className="text-[#D4A373]" />
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-tight">
+                            {PILLAR_DEFS[p].desc}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800">
+                      <Icon name="timeline" className="text-[#D4A373]" /> 3.
+                      Working Model
+                    </h2>
+                    <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border mb-4">
+                      <p className="font-bold text-sm">
+                        Include Working Model Slide
+                      </p>
+                      <input
+                        type="checkbox"
+                        checked={config.showWorkingModel}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            showWorkingModel: e.target.checked,
+                          })
+                        }
+                        className="w-6 h-6 accent-[#D4A373]"
+                      />
+                    </div>
+                    {config.showWorkingModel && (
+                      <div className="p-4 border-l-4 border-[#D4A373] bg-[#FFFBF2]/30 rounded-r-2xl flex items-center gap-3">
+                        <span className="text-sm">Settlement on</span>
+                        <input
+                          type="text"
+                          value={config.workingModelDays}
+                          onChange={(e) =>
+                            setConfig({
+                              ...config,
+                              workingModelDays: e.target.value,
+                            })
+                          }
+                          className="w-20 border p-1.5 rounded-lg text-center font-bold"
+                        />
+                        <span className="text-sm">day of quality report.</span>
+                      </div>
+                    )}
+                  </section>
+
+                  <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800">
+                      <Icon name="star" className="text-[#D4A373]" /> 4. Success
+                      Stories
+                    </h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      {Object.keys(STORY_DEFS).map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => toggleItem("selectedStories", s)}
+                          className={
+                            "p-4 rounded-2xl border text-left transition-all " +
+                            (config.selectedStories.includes(s)
+                              ? "border-[#D4A373] bg-[#FFFBF2] ring-1 ring-[#D4A373]"
+                              : "border-slate-100")
+                          }
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-bold">{s}</span>
+                            {config.selectedStories.includes(s) && (
+                              <Icon name="check" className="text-[#D4A373]" />
+                            )}
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800">
+                      <Icon name="award" className="text-[#D4A373]" /> 5. The
+                      Poshn Edge
+                    </h2>
+                    <div className="grid grid-cols-2 gap-4">
+                      {Object.keys(USP_DEFS).map((u) => (
+                        <button
+                          key={u}
+                          onClick={() => toggleItem("selectedUSPs", u)}
+                          className={
+                            "p-4 rounded-2xl border text-left transition-all " +
+                            (config.selectedUSPs.includes(u)
+                              ? "border-[#D4A373] bg-[#FFFBF2] ring-1 ring-[#D4A373]"
+                              : "border-slate-100")
+                          }
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-bold">{u}</span>
+                            {config.selectedUSPs.includes(u) && (
+                              <Icon name="check" className="text-[#D4A373]" />
+                            )}
+                          </div>
+                          <p className="text-[11px] text-slate-500 leading-tight">
+                            {USP_DEFS[u].desc}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800">
+                      <Icon name="building-shield" className="text-[#D4A373]" />{" "}
+                      6. Governance
+                    </h2>
+                    <div className="space-y-2">
+                      {Object.keys(GOVERNANCE_DEFS).map((g) => (
+                        <button
+                          key={g}
+                          onClick={() => toggleItem("selectedGovernance", g)}
+                          className={
+                            "w-full p-3 text-[11px] border rounded-xl text-left transition-all flex items-center gap-3 " +
+                            (config.selectedGovernance.includes(g)
+                              ? "bg-slate-100 border-slate-300 font-bold"
+                              : "opacity-40")
+                          }
+                        >
+                          <Icon
+                            name={
+                              config.selectedGovernance.includes(g)
+                                ? "check-square"
+                                : "square"
+                            }
+                          />
+                          {g.replace("Buyer", config.buyerName)}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800">
+                      <Icon name="ban" className="text-[#D4A373]" /> 7.
+                      Exclusions
+                    </h2>
+                    <div className="space-y-2">
+                      {Object.keys(EXCLUSION_DEFS).map((e) => (
+                        <button
+                          key={e}
+                          onClick={() => toggleItem("selectedExclusions", e)}
+                          className={
+                            "w-full p-3 text-[11px] border rounded-xl text-left transition-all flex items-center gap-3 " +
+                            (config.selectedExclusions.includes(e)
+                              ? "bg-[#42210B] text-white font-bold"
+                              : "opacity-40")
+                          }
+                        >
+                          <Icon
+                            name={
+                              config.selectedExclusions.includes(e)
+                                ? "check-square"
+                                : "square"
+                            }
+                          />
+                          {e.replace("Buyer", config.buyerName)}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+
+                  <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800">
+                      <Icon
+                        name="hand-holding-dollar"
+                        className="text-[#D4A373]"
+                      />{" "}
+                      8. Commercials
+                    </h2>
+                    <div className="flex flex-wrap gap-3">
+                      {Object.keys(TIER_DEFS).map((t) => (
+                        <button
+                          key={t}
+                          onClick={() => toggleItem("selectedTiers", t)}
+                          className={
+                            "px-4 py-3 md:px-6 md:py-4 border-2 rounded-2xl text-sm font-bold transition-all " +
+                            (config.selectedTiers.includes(t)
+                              ? "bg-[#D4A373] text-white border-[#D4A373] shadow-lg shadow-[#D4A373]/20"
+                              : "border-slate-100 text-slate-400")
+                          }
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              {/* PREVIEW TAB */}
+              <div
+                className={
+                  "h-full flex flex-col bg-slate-200 " +
+                  (activeTab === "preview" ? "flex" : "hidden")
+                }
+              >
+                <div className="bg-white border-b border-slate-300 p-4 flex items-center justify-between shrink-0 shadow-sm z-50">
+                  <div className="flex bg-slate-100 p-1 rounded-lg">
+                    <button
+                      onClick={() => setViewport("laptop")}
+                      className={
+                        "px-6 py-1.5 rounded md:text-sm font-bold transition-all " +
+                        (viewport === "laptop"
+                          ? "bg-white shadow-sm"
+                          : "text-slate-400")
+                      }
+                    >
+                      Laptop
+                    </button>
+                    <button
+                      onClick={() => setViewport("mobile")}
+                      className={
+                        "px-6 py-1.5 rounded md:text-sm font-bold transition-all " +
+                        (viewport === "mobile"
+                          ? "bg-white shadow-sm"
+                          : "text-slate-400")
+                      }
+                    >
+                      Mobile
+                    </button>
+                  </div>
+                  <button
+                    onClick={handleDownloadHTML}
+                    className="bg-[#42210B] px-6 py-2 rounded-lg text-sm font-bold text-white hover:opacity-90 transition-all flex items-center gap-2"
+                  >
+                    <Icon name="download" className="text-[#D4A373]" /> Download
+                    HTML
+                  </button>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <div className="preview-wrapper custom-scrollbar">
+                    <iframe
+                      srcDoc={finalHTML}
+                      className={
+                        "preview-frame " +
+                        (viewport === "mobile"
+                          ? "mobile-frame"
+                          : "laptop-frame")
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+            </main>
+
+            <footer className="bg-white border-t border-slate-200 px-4 py-2 shrink-0 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest z-[120]">
+              <div>{config.buyerName} • Build Ready</div>
+              <div>v2.8 FINAL MASTER • Logic Sync Perfected</div>
+            </footer>
+          </div>
+        );
+      };
+
+      const container = document.getElementById("root");
+      const root = ReactDOM.createRoot(container);
+      root.render(<App />);
     </script>
-</body>
+  </body>
 </html>

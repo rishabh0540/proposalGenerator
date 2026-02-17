@@ -3,14 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Poshn Proposal Generator | Admin Panel</title>
-    <!-- Tailwind CSS for UI -->
+    <title>Poshn Proposal Generator | Final Master</title>
+    <!-- Dependencies -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -20,14 +18,25 @@
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
-        .preview-container {
-            transition: all 0.4s ease;
-            margin: 0 auto;
-            background: white;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
+        /* New Preview Engine Style (Centered, No Zoom/Scale clipping) */
+        .preview-wrapper {
+            background: #cbd5e1;
+            height: 100%;
+            overflow: auto;
+            padding: 40px;
+            display: flex;
+            justify-content: center;
         }
-        .laptop-view { width: 100%; max-width: 1200px; height: 800px; zoom: 0.85; border: 1px solid #e2e8f0; }
-        .mobile-view { width: 375px; height: 667px; border: 1px solid #e2e8f0; }
+
+        .preview-frame {
+            background: white;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border: none;
+            transition: width 0.3s ease;
+        }
+
+        .laptop-frame { width: 1280px; height: 2000px; } 
+        .mobile-frame { width: 375px; height: 4000px; }
     </style>
 </head>
 <body>
@@ -51,20 +60,18 @@
                 selectedGovernance: [
                     'Master Service Agreements',
                     'Indemnity Bonds',
-                    'Security Cheques (Buyer to Poshn)',
-                    'Poshn pays delay charges if Poshn delays.'
+                    'Security Cheques (Buyer to Poshn)'
                 ],
                 selectedExclusions: [
-                    'Quality Guarantee: Responsibility of Buyer.',
-                    'Delivery Guarantee: Aligned by Buyer/Vendor.',
-                    'Payment Delays: Buyer pays pro-rata if late.'
+                    'Quality Assurance: Responsibility of Buyer.',
+                    'Order Fulfillment: Aligned by Buyer/Vendor.'
                 ],
-                selectedTiers: ['Only Tech', 'Tech + KAM', 'The Full Engine']
+                selectedTiers: ['Only Tech', 'Tech + KAM', 'Capital Support'],
+                selectedStories: ['Haryana Basmati', 'Alwar Cost-Effectiveness']
             });
 
             const [activeTab, setActiveTab] = useState('editor');
-            const [previewViewport, setPreviewViewport] = useState('laptop');
-            const [copied, setCopied] = useState(false);
+            const [viewport, setViewport] = useState('laptop');
 
             const PILLAR_DEFS = {
                 'Vendor Management': { icon: 'users-gear', desc: 'Onboarding and relationship management for stable supply.' },
@@ -85,14 +92,12 @@
             const GOVERNANCE_DEFS = {
                 'Master Service Agreements': 'file-signature',
                 'Indemnity Bonds': 'file-shield',
-                'Security Cheques (Buyer to Poshn)': 'money-check-dollar',
-                'Poshn pays delay charges if Poshn delays.': 'clock-rotate-left'
+                'Security Cheques (Buyer to Poshn)': 'money-check-dollar'
             };
 
             const EXCLUSION_DEFS = {
-                'Quality Guarantee: Responsibility of Buyer.': 'circle-xmark',
-                'Delivery Guarantee: Aligned by Buyer/Vendor.': 'circle-xmark',
-                'Payment Delays: Buyer pays pro-rata if late.': 'circle-xmark'
+                'Quality Assurance: Responsibility of Buyer.': 'circle-xmark',
+                'Order Fulfillment: Aligned by Buyer/Vendor.': 'circle-xmark'
             };
 
             const TIER_DEFS = {
@@ -102,11 +107,24 @@
                 },
                 'Tech + KAM': {
                     rate: '0.2%', min: 'Min ₹1 Lakh / Month', featured: false,
-                    features: ['Dedicated Human Resource', 'Vendor followup management', 'Zero staff training required', 'PO consolidation service']
+                    features: ['All in tech plan included', 'Dedicated Human Resource', 'Vendor followup management', 'Zero staff training required', 'PO consolidation service']
                 },
-                'The Full Engine': {
+                'Capital Support': {
                     rate: '0.06%', secondaryRate: '0.08%', min: 'Capital ROI / Day', featured: true,
-                    features: ['All benefits of Tech + KAM', '100% Capital Liquidity', 'Immediate Vendor Settlements', 'Min duration: 7 Days', 'Base aggregator consolidation']
+                    features: ['365 Days Payment Support', 'Same Day Settlement', 'Priority TAT: 3-4 Hrs', 'Simple Process as UPI', 'Min duration: 7 Days']
+                }
+            };
+
+            const STORY_DEFS = {
+                'Haryana Basmati': {
+                    title: 'The Haryana Growth Story',
+                    content: 'A <strong>Haryana-based top basmati exporter</strong> started with a <strong>₹2 Cr</strong> procurement limit. By utilizing Poshn\'s services, they scaled to a <strong>₹12 Cr</strong> limit within just 15 months.',
+                    badge: '6X Procurement Capacity'
+                },
+                'Alwar Cost-Effectiveness': {
+                    title: 'The Alwar Efficiency Story',
+                    content: 'An <strong>Alwar-based plant</strong> significantly reduced manual workload by digitizing procurement. They were able to <strong>free up 10 human resources</strong> for core operations using Poshn Tech.',
+                    badge: 'INR 52 Lakhs Annually Saved'
                 }
             };
 
@@ -144,15 +162,24 @@
                     ${d.rate}${d.secondaryRate ? `<span style="font-size: 0.45em; vertical-align: middle; margin-left: 5px; opacity: 0.7; font-weight: 400;"> - ${d.secondaryRate}</span>` : ''}
                 </div>
                 <div class="tier-min" ${d.featured ? 'style="color: #fff; opacity: 0.8;"' : ''}>${d.min}</div>
-                <ul class="feature-list">
-                    ${d.features.map(f => `<li><i class="fa-solid fa-check"></i> ${f}</li>`).join('')}
+                <ul class="feature-list" style="list-style:none;">
+                    ${d.features.map(f => `<li><i class="fa-solid fa-check" style="color:var(--accent-tan); margin-right:8px;"></i> ${f}</li>`).join('')}
                 </ul>
                 ${t !== 'Only Tech' ? '<div class="tcs-note">0.1% TCS Applicable</div>' : ''}
             </div>`;
                 }).join('');
 
+                const storiesHtml = config.selectedStories.map(s => {
+                    const d = STORY_DEFS[s];
+                    return `
+            <div class="story-card stagger-child" style="background: var(--white); padding: 35px; border-radius: 30px; border: 1px solid var(--accent-muted); flex: 1 1 45%;">
+                <div class="badge" style="background: var(--accent-tan); color: white; margin-bottom: 20px; font-size: 1.1rem; padding: 10px 20px; border-radius: 10px; width: fit-content; display: inline-block; font-weight: 800; box-shadow: 0 4px 12px rgba(212, 163, 115, 0.3); text-transform: uppercase;">${d.badge}</div>
+                <h3 style="font-size: 24px; margin-bottom: 15px;">${d.title}</h3>
+                <p style="font-size: 16px; line-height: 1.6; opacity: 0.8;">${d.content}</p>
+            </div>`;
+                }).join('');
+
                 const workingModelSlide = config.showWorkingModel ? `
-    <!-- SLIDE 4: WORKING MODEL -->
     <div class="slide-container reveal">
         <h2 class="slide-title">The Working Model</h2>
         <p style="margin-top: -15px;">Seamless "Bill-to-Ship-to" Execution for ${config.buyerName}</p>
@@ -220,21 +247,15 @@
         .centered-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; flex-grow: 1; }
 
-        /* LAPTOP GRID LOGIC: Services forced to 4 cols, USP to 3 cols */
-        .tile-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; width: 100%; margin-top: 15px; }
-        /* Slide 7 USP Grid override to 3 columns */
+        .tile-grid { display: grid; grid-template-columns: repeat(${config.selectedPillars.length <= 4 ? 4 : 3}, 1fr); gap: 15px; width: 100%; margin-top: 15px; }
         .slide-container:nth-of-type(7) .tile-grid { grid-template-columns: repeat(3, 1fr); }
         
-        /* Laptop Stretch Logic: if < 4, cards fill row */
         .tile-grid:has(.tile:nth-child(1):last-child) { grid-template-columns: 1fr; }
         .tile-grid:has(.tile:nth-child(2):last-child) { grid-template-columns: 1fr 1fr; }
         .tile-grid:has(.tile:nth-child(3):last-child) { grid-template-columns: 1fr 1fr 1fr; }
 
         .tile, .tier-card { background: var(--white); padding: 25px 20px; border-radius: 20px; border: 1px solid var(--accent-muted); display: flex; flex-direction: column; align-items: center; text-align: center; transition: transform 0.3s ease; }
-        
-        /* Heading fix for Laptop Alignment: ensuring headings take equal space */
         .tile h3 { min-height: 60px; display: flex; align-items: center; justify-content: center; margin: 0 0 10px; }
-        
         .tile .icon-box { height: 45px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
         .tile i { font-size: 32px; color: var(--accent-tan); }
         .tile p { font-size: 13px; line-height: 1.4; flex-grow: 1; }
@@ -242,12 +263,10 @@
         .commercial-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; width: 100%; margin-top: 20px; }
         .tier-card { flex: 1 1 300px; max-width: 100%; border-radius: 24px; padding: 35px; text-align: left; align-items: flex-start; }
         .tier-card.featured { background: var(--text-dark); color: var(--white); border: none; box-shadow: 0 15px 35px rgba(66, 33, 11, 0.2); }
-        .tier-card h3 { min-height: auto; display: block; } /* Proposal headers align naturally */
-        
         .tier-rate { font-family: var(--font-title); font-size: clamp(28px, 4vw, 42px); font-weight: 800; margin-bottom: 5px; color: var(--accent-tan); line-height: 1; }
-        .tier-min { font-size: 12px; opacity: 0.7; margin-bottom: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-        .feature-list { list-style: none; padding: 0; margin: 0 0 15px 0; font-size: 13px; flex-grow: 1; }
+        .feature-list { list-style: none; padding: 15px 0px; margin: 0 0 15px 0; font-size: 13px; flex-grow: 1; }
         .feature-list li { margin-bottom: 6px; display: flex; align-items: flex-start; gap: 8px; }
+
         .tcs-note { font-size: 10px; font-style: italic; opacity: 0.6; margin-top: 10px; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 25px; text-align: left; }
@@ -264,54 +283,49 @@
         .comp-box { padding: 30px; border-radius: 24px; display: flex; flex-direction: column; text-align: left; background: var(--white); border: 1px solid var(--accent-muted); }
         .comp-box.dark { background: var(--text-dark); color: white !important; }
         .comp-box h3 { display: flex; align-items: center; gap: 20px; }
-        
-        /* Content row gapping added */
         .comp-list { display: flex; flex-direction: column; gap: 18px; width: 100%; margin-top: 10px; }
         .comp-item { display: flex; align-items: center; gap: 12px; padding: 10px 15px; border-radius: 12px; background: rgba(212, 163, 115, 0.1); font-size: 14px; }
-        .comp-box.dark .comp-item { background: rgba(255, 251, 242, 0.1); color: white; }
+        .comp-box.dark .comp-item { background: rgba(255, 251, 242, 0.1); color: white !important; }
+
+        .story-container { display: flex; flex-wrap: wrap; gap: 20px; width: 100%; margin-top: 20px; }
 
         @media (max-width: 768px) {
             body { padding: 0; gap: 0; }
             .slide-container { width: 100%; border-radius: 0; min-height: unset; height: auto; padding: 60px 24px; margin-bottom: 0; border-bottom: 2px solid var(--accent-muted); text-align: left !important; }
-            
             .slide-container:nth-of-type(2).reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
             .centered-content { align-items: flex-start !important; text-align: left !important; }
             h2.slide-title { font-size: 32px; width: 100%; text-align: left !important; }
             .two-column { grid-template-columns: 1fr; gap: 20px; text-align: left !important; }
             .hide-mobile { display: none; }
-
-            .tile-grid, .commercial-grid { display: flex; flex-direction: column; gap: 15px; }
+            .tile-grid, .commercial-grid, .story-container { display: flex; flex-direction: column; gap: 15px; }
             .tile { flex: 1 1 100%; flex-direction: row; align-items: center !important; text-align: left !important; padding: 20px; gap: 20px; border-radius: 15px; }
             .tile h3 { min-height: auto; justify-content: flex-start; display: block; }
-            .tile .icon-box { flex-shrink: 0; width: 40px; margin: 0; justify-content: flex-start; }
-            .tile h3 { font-size: 18px; margin-bottom: 5px; text-align: left !important; }
-
-            /* MOBILE WORKING MODEL: Expansion fix to full width */
             .timeline-box { display: flex; flex-direction: column; gap: 40px; margin-top: 30px; width: 100% !important; }
             .timeline-line { width: 4px; height: 100%; left: 28px; top: 0; }
             .timeline-step { display: flex; flex-direction: row; align-items: center !important; text-align: left !important; gap: 25px; width: 100% !important; }
             .step-num { flex-shrink: 0; width: 56px; height: 56px; margin: 0; font-size: 18px; }
             .timeline-step .text-box { flex: 1; padding-top: 0; }
-
             .tier-card { flex: 1 1 100%; width: 100%; padding: 25px; }
             .comp-container { grid-template-columns: 1fr; gap: 15px; }
-            .scaling-hero { text-align: left !important; align-items: flex-start !important; }
+        }
+
+        @media print {
+            body { background: white; padding: 0; }
+            .slide-container { box-shadow: none; border-radius: 0; margin: 0; border: none; page-break-after: always; min-height: 100vh; }
         }
         .highlight { color: var(--accent-tan); font-weight: 700; }
-        .badge { display: inline-block; padding: 5px 10px; background: var(--accent-muted); border-radius: 5px; font-weight: 700; font-size: 11px; margin-bottom: 10px; }
+        .badge { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: 700; font-size: 11px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <!-- SLIDE 1 -->
     <div class="slide-container reveal">
         <div class="centered-content">
-            <div class="badge">STRATEGIC PARTNERSHIP</div>
+            <div class="badge" style="background: var(--accent-muted);">STRATEGIC PARTNERSHIP</div>
             <h1>Your Integrated <br><span class="highlight">Procurement</span> Arm</h1>
             <p style="margin-top: 30px; opacity: 0.8;">A Partner Proposal for <strong>${config.buyerName}</strong></p>
         </div>
     </div>
 
-    <!-- SLIDE 2 -->
     <div class="slide-container reveal">
         <h2 class="slide-title">Who We Are?</h2>
         <div class="two-column">
@@ -331,7 +345,6 @@
         </div>
     </div>
 
-    <!-- SLIDE 3 -->
     <div class="slide-container reveal">
         <h2 class="slide-title">Core Service Pillars</h2>
         <div class="tile-grid">${pillarsHtml}</div>
@@ -343,7 +356,6 @@
 
     ${workingModelSlide}
 
-    <!-- SLIDE 5 -->
     <div class="slide-container reveal">
         <h2 class="slide-title">Associated Partners</h2>
         <div class="content-area" style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
@@ -359,38 +371,27 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);"><strong>10K Cr Revenue</strong> (BBB+)</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">₹20 Cr</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">100 Days</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">5 - 6%</td></tr>
-                        <tr><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);"><strong>12K Cr Revenue</strong> (BBB+)</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">₹15 Cr</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">140 Days</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">7 - 8%</td></tr>
-                        <tr><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);"><strong>58K Cr Revenue</strong> (AAA+)</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">₹20 Cr</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">10 Days</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">0.8%</td></tr>
+                        <tr style="font-weight: 800; background: rgba(212, 163, 115, 0.05);"><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);"><strong>58K Cr Revenue</strong> (AAA+)</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">₹20 Cr</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">10 Days</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">0.8%</td></tr>
+                        <tr><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);"><strong>10K Cr Revenue</strong> (BBB+)</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">₹20 Cr</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">60 Days</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">4 - 5%</td></tr>
+                        <tr><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);"><strong>12K Cr Revenue</strong> (BBB+)</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">₹15 Cr</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">90 Days</td><td style="padding: 12px 15px; border-bottom: 1px solid var(--accent-muted);">6 - 7%</td></tr>
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
     
-    <!-- SLIDE 6 -->
     <div class="slide-container reveal">
         <h2 class="slide-title">Unprecedented Scaling</h2>
-        <div class="two-column">
-            <div style="text-align: center;" class="scaling-hero">
-                <div style="font-family: var(--font-title); font-size: clamp(100px, 15vw, 180px); font-weight: 800; color: var(--accent-tan);">6X</div>
-                <p style="font-weight: 700; margin-top: 5px;">Limit Increase</p>
-            </div>
-            <div style="background: var(--white); padding: 30px; border-radius: 30px; border: 1px solid var(--accent-muted);">
-                <h3>The Haryana Growth Story</h3>
-                <p>A <strong>Haryana-based top basmati exporter</strong> started with a <strong>₹2 Cr</strong> procurement limit. By utilizing Poshn's reconciliation and payment services, they scaled to a <strong>₹12 Cr</strong> limit within just 15 months.</p>
-                <div style="margin-top: 15px;"><p class="highlight" style="margin: 0; font-size: 18px;">Poshn enables you to buy more, faster.</p></div>
-            </div>
+        <div class="story-container">
+            ${storiesHtml}
         </div>
     </div>
 
-    <!-- SLIDE 7 -->
     <div class="slide-container reveal">
         <h2 class="slide-title">The Poshn Edge</h2>
         <div class="tile-grid">${uspsHtml}</div>
     </div>
 
-    <!-- SLIDE 8 -->
     <div class="slide-container reveal">
         <h2 class="slide-title">Compliances & Scope</h2>
         <div class="centered-content" style="justify-content: center;">
@@ -407,7 +408,6 @@
         </div>
     </div>
 
-    <!-- SLIDE 9 -->
     <div class="slide-container reveal">
         <h2 class="slide-title">Commercial Proposal</h2>
         <div class="commercial-grid">${tiersHtml}</div>
@@ -416,7 +416,6 @@
         </div>
     </div>
 
-    <!-- SLIDE 10 -->
     <div class="slide-container reveal">
         <div class="centered-content">
             <h1 style="margin-bottom: 20px;">Thank <span class="highlight">You</span></h1>
@@ -438,15 +437,16 @@
 </html>`;
             }, [config]);
 
-            const handleCopy = () => {
-                const textArea = document.createElement("textarea");
-                textArea.value = finalHTML;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand("copy");
-                document.body.removeChild(textArea);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
+            const handleDownloadHTML = () => {
+                const blob = new Blob([finalHTML], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Poshn_Proposal_${config.buyerName.replace(/\s+/g, '_')}.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
             };
 
             const toggleItem = (listKey, item) => {
@@ -459,31 +459,31 @@
             return (
                 <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
                     {/* Fixed Main Navbar */}
-                    <header className="bg-white border-b border-slate-200 px-4 md:px-6 py-4 flex flex-col md:flex-row items-center justify-between z-[300] gap-4 md:gap-0 shadow-sm shrink-0">
+                    <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between z-[300] gap-4 md:gap-0 shadow-sm shrink-0">
                         <div className="flex items-center gap-3 w-full md:w-auto">
                             <div className="bg-[#42210B] p-2 rounded-lg text-[#D4A373]"><Icon name="bolt" /></div>
-                            <h1 className="font-bold text-lg text-slate-800 tracking-tight whitespace-nowrap">Poshn Proposal Generator</h1>
+                            <h1 className="font-bold text-lg text-slate-800 tracking-tight whitespace-nowrap">Poshn Generator</h1>
                         </div>
                         <div className="flex bg-slate-100 p-1 rounded-lg w-full md:w-auto overflow-x-auto">
-                            <button onClick={() => setActiveTab('editor')} className={"flex-1 md:flex-none px-4 md:px-5 py-2 rounded-md text-sm font-semibold transition-all " + (activeTab === 'editor' ? 'bg-white text-[#42210B] shadow-sm' : 'text-slate-500')}>Config</button>
-                            <button onClick={() => setActiveTab('preview')} className={"flex-1 md:flex-none px-4 md:px-5 py-2 rounded-md text-sm font-semibold transition-all " + (activeTab === 'preview' ? 'bg-white text-[#42210B] shadow-sm' : 'text-slate-500')}>Preview</button>
-                            <button onClick={() => setActiveTab('code')} className={"flex-1 md:flex-none px-4 md:px-5 py-2 rounded-md text-sm font-semibold transition-all " + (activeTab === 'code' ? 'bg-white text-[#42210B] shadow-sm' : 'text-slate-500')}>Export</button>
+                            <button onClick={() => setActiveTab('editor')} className={"flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-semibold transition-all " + (activeTab === 'editor' ? 'bg-white text-[#42210B] shadow-sm' : 'text-slate-500')}>Config</button>
+                            <button onClick={() => setActiveTab('preview')} className={"flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-semibold transition-all " + (activeTab === 'preview' ? 'bg-white text-[#42210B] shadow-sm' : 'text-slate-500')}>Preview</button>
                         </div>
                     </header>
 
                     <main className="flex-1 overflow-hidden relative">
+                        {/* CONFIG PANEL */}
                         <div className={"h-full overflow-y-auto p-4 md:p-8 custom-scrollbar " + (activeTab === 'editor' ? 'block' : 'hidden')}>
                             <div className="max-w-4xl mx-auto space-y-8 pb-24 pt-4">
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="user" className="text-[#D4A373]" /> Identity</h2>
+                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="user" className="text-[#D4A373]" /> 1. Identity</h2>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-bold uppercase text-slate-400">Client Entity Name</label>
-                                            <input type="text" value={config.buyerName} onChange={(e) => setConfig({...config, buyerName: e.target.value})} className="w-full bg-slate-50 border p-3 rounded-xl outline-none" />
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Client Name</label>
+                                            <input type="text" value={config.buyerName} onChange={(e) => setConfig({...config, buyerName: e.target.value})} className="w-full bg-slate-50 border p-3 rounded-xl outline-none focus:ring-2 focus:ring-[#D4A373]" />
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-bold uppercase text-slate-400">Support Email</label>
-                                            <input type="email" value={config.contactEmail} onChange={(e) => setConfig({...config, contactEmail: e.target.value})} className="w-full bg-slate-50 border p-3 rounded-xl outline-none" />
+                                            <input type="email" value={config.contactEmail} onChange={(e) => setConfig({...config, contactEmail: e.target.value})} className="w-full bg-slate-50 border p-3 rounded-xl outline-none focus:ring-2 focus:ring-[#D4A373]" />
                                         </div>
                                     </div>
                                 </section>
@@ -505,7 +505,7 @@
 
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
                                     <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="timeline" className="text-[#D4A373]" /> 3. Working Model</h2>
-                                    <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border border-slate-100 mb-6">
+                                    <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border mb-4">
                                         <p className="font-bold text-sm">Include Working Model Slide</p>
                                         <input type="checkbox" checked={config.showWorkingModel} onChange={(e) => setConfig({...config, showWorkingModel: e.target.checked})} className="w-6 h-6 accent-[#D4A373]" />
                                     </div>
@@ -513,13 +513,27 @@
                                         <div className="p-4 border-l-4 border-[#D4A373] bg-[#FFFBF2]/30 rounded-r-2xl flex items-center gap-3">
                                             <span className="text-sm">Settlement on</span>
                                             <input type="text" value={config.workingModelDays} onChange={(e) => setConfig({...config, workingModelDays: e.target.value})} className="w-20 border p-1.5 rounded-lg text-center font-bold" />
-                                            <span className="text-sm">day.</span>
+                                            <span className="text-sm">day of quality report.</span>
                                         </div>
                                     )}
                                 </section>
 
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="award" className="text-[#D4A373]" /> 4. The Poshn Edge</h2>
+                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="star" className="text-[#D4A373]" /> 4. Success Stories</h2>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        {Object.keys(STORY_DEFS).map(s => (
+                                            <button key={s} onClick={() => toggleItem('selectedStories', s)} className={"p-4 rounded-2xl border text-left transition-all " + (config.selectedStories.includes(s) ? 'border-[#D4A373] bg-[#FFFBF2] ring-1 ring-[#D4A373]' : 'border-slate-100')}>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <span className="text-sm font-bold">{s}</span>
+                                                    {config.selectedStories.includes(s) && <Icon name="check" className="text-[#D4A373]" />}
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </section>
+
+                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="award" className="text-[#D4A373]" /> 5. The Poshn Edge</h2>
                                     <div className="grid grid-cols-2 gap-4">
                                         {Object.keys(USP_DEFS).map(u => (
                                             <button key={u} onClick={() => toggleItem('selectedUSPs', u)} className={"p-4 rounded-2xl border text-left transition-all " + (config.selectedUSPs.includes(u) ? 'border-[#D4A373] bg-[#FFFBF2] ring-1 ring-[#D4A373]' : 'border-slate-100')}>
@@ -534,87 +548,72 @@
                                 </section>
 
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="shield-halved" className="text-[#D4A373]" /> 5. Compliances</h2>
-                                    <div className="space-y-6">
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-3">Governance (White Box)</label>
-                                            <div className="grid grid-cols-1 gap-2">
-                                                {Object.keys(GOVERNANCE_DEFS).map(g => (
-                                                    <button key={g} onClick={() => toggleItem('selectedGovernance', g)} className={"p-3 text-[11px] border rounded-xl text-left transition-all flex items-center gap-3 " + (config.selectedGovernance.includes(g) ? 'bg-slate-100 border-slate-300 font-bold text-slate-800' : 'opacity-40 border-slate-100 text-slate-400')}>
-                                                        <Icon name={config.selectedGovernance.includes(g) ? "check-square" : "square"} />
-                                                        {g.replace('Buyer', config.buyerName)}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-3">Exclusions (Dark Box)</label>
-                                            <div className="grid grid-cols-1 gap-2">
-                                                {Object.keys(EXCLUSION_DEFS).map(e => (
-                                                    <button key={e} onClick={() => toggleItem('selectedExclusions', e)} className={"p-3 text-[11px] border rounded-xl text-left transition-all flex items-center gap-3 " + (config.selectedExclusions.includes(e) ? 'bg-[#42210B] border-[#42210B] text-white font-bold' : 'opacity-40 border-slate-100 text-slate-400')}>
-                                                        <Icon name={config.selectedExclusions.includes(e) ? "check-square" : "square"} />
-                                                        {e.replace('Buyer', config.buyerName)}
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
+                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="building-shield" className="text-[#D4A373]" /> 6. Governance</h2>
+                                    <div className="space-y-2">
+                                        {Object.keys(GOVERNANCE_DEFS).map(g => (
+                                            <button key={g} onClick={() => toggleItem('selectedGovernance', g)} className={"w-full p-3 text-[11px] border rounded-xl text-left transition-all flex items-center gap-3 " + (config.selectedGovernance.includes(g) ? 'bg-slate-100 border-slate-300 font-bold' : 'opacity-40')}>
+                                                <Icon name={config.selectedGovernance.includes(g) ? "check-square" : "square"} />
+                                                {g.replace('Buyer', config.buyerName)}
+                                            </button>
+                                        ))}
                                     </div>
                                 </section>
 
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="hand-holding-dollar" className="text-[#D4A373]" /> 6. Commercials</h2>
+                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="ban" className="text-[#D4A373]" /> 7. Exclusions</h2>
+                                    <div className="space-y-2">
+                                        {Object.keys(EXCLUSION_DEFS).map(e => (
+                                            <button key={e} onClick={() => toggleItem('selectedExclusions', e)} className={"w-full p-3 text-[11px] border rounded-xl text-left transition-all flex items-center gap-3 " + (config.selectedExclusions.includes(e) ? 'bg-[#42210B] text-white font-bold' : 'opacity-40')}>
+                                                <Icon name={config.selectedExclusions.includes(e) ? "check-square" : "square"} />
+                                                {e.replace('Buyer', config.buyerName)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </section>
+
+                                <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
+                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="hand-holding-dollar" className="text-[#D4A373]" /> 8. Commercials</h2>
                                     <div className="flex flex-wrap gap-3">
                                         {Object.keys(TIER_DEFS).map(t => (
-                                            <button key={t} onClick={() => toggleItem('selectedTiers', t)} className={"px-4 py-3 md:px-6 md:py-4 border-2 rounded-2xl text-sm font-bold transition-all " + (config.selectedTiers.includes(t) ? 'bg-[#D4A373] text-white border-[#D4A373] shadow-lg shadow-[#D4A373]/20' : 'border-slate-100 text-slate-400 hover:border-slate-200')}>{t}</button>
+                                            <button key={t} onClick={() => toggleItem('selectedTiers', t)} className={"px-4 py-3 md:px-6 md:py-4 border-2 rounded-2xl text-sm font-bold transition-all " + (config.selectedTiers.includes(t) ? 'bg-[#D4A373] text-white border-[#D4A373] shadow-lg shadow-[#D4A373]/20' : 'border-slate-100 text-slate-400')}>{t}</button>
                                         ))}
                                     </div>
                                 </section>
                             </div>
                         </div>
 
-                        {/* 2. PREVIEW TAB */}
+                        {/* PREVIEW TAB */}
                         <div className={"h-full flex flex-col bg-slate-200 " + (activeTab === 'preview' ? 'flex' : 'hidden')}>
                             <div className="bg-white border-b border-slate-300 p-4 flex items-center justify-between shrink-0 shadow-sm z-50">
                                 <div className="flex bg-slate-100 p-1 rounded-lg">
-                                    <button onClick={() => setPreviewViewport('laptop')} className={"px-6 py-1.5 rounded md:text-sm font-bold " + (previewViewport === 'laptop' ? 'bg-white shadow-sm' : 'text-slate-400')}>Laptop</button>
-                                    <button onClick={() => setPreviewViewport('mobile')} className={"px-6 py-1.5 rounded md:text-sm font-bold " + (previewViewport === 'mobile' ? 'bg-white shadow-sm' : 'text-slate-400')}>Mobile</button>
+                                    <button onClick={() => setViewport('laptop')} className={"px-6 py-1.5 rounded md:text-sm font-bold transition-all " + (viewport === 'laptop' ? 'bg-white shadow-sm' : 'text-slate-400')}>Laptop</button>
+                                    <button onClick={() => setViewport('mobile')} className={"px-6 py-1.5 rounded md:text-sm font-bold transition-all " + (viewport === 'mobile' ? 'bg-white shadow-sm' : 'text-slate-400')}>Mobile</button>
                                 </div>
-                            </div>
-                            <div className="flex-1 overflow-auto p-4 md:p-10 custom-scrollbar flex items-start justify-center">
-                                <div className={"preview-container " + (previewViewport === 'mobile' ? 'mobile-view' : 'laptop-view')}>
-                                    <iframe srcDoc={finalHTML} className="w-full h-full border-none shadow-2xl bg-white" />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* 3. EXPORT TAB */}
-                        <div className={"h-full flex flex-col bg-slate-900 " + (activeTab === 'code' ? 'flex' : 'hidden')}>
-                            <div className="shrink-0 bg-slate-900 border-b border-white/5 p-4 md:p-6 flex items-center justify-between shadow-lg z-[210]">
-                                <div>
-                                    <h2 className="text-white font-bold text-sm md:text-base">Export Proposal Code</h2>
-                                    <p className="text-[10px] text-slate-500">Stand-alone HTML format ready for deployment.</p>
-                                </div>
-                                <button onClick={handleCopy} className="bg-[#D4A373] text-white px-4 md:px-6 py-2 md:py-2.5 rounded-full font-bold text-xs md:text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2">
-                                    <Icon name={copied ? "check" : "copy"} /> {copied ? 'Copied!' : 'Copy Code'}
+                                <button onClick={handleDownloadHTML} className="bg-[#42210B] px-6 py-2 rounded-lg text-sm font-bold text-white hover:opacity-90 transition-all flex items-center gap-2">
+                                    <Icon name="download" className="text-[#D4A373]" /> Download HTML
                                 </button>
                             </div>
-                            <div className="flex-1 p-4 md:p-8 overflow-auto custom-scrollbar">
-                                <pre className="text-[11px] font-mono text-slate-400 whitespace-pre-wrap leading-relaxed bg-black/40 p-6 md:p-8 rounded-3xl border border-white/5 shadow-inner">
-                                    {finalHTML}
-                                </pre>
+                            <div className="flex-1 overflow-hidden">
+                                <div className="preview-wrapper custom-scrollbar">
+                                    <iframe 
+                                        srcDoc={finalHTML} 
+                                        className={"preview-frame " + (viewport === 'mobile' ? 'mobile-frame' : 'laptop-frame')}
+                                    />
+                                </div>
                             </div>
                         </div>
                     </main>
 
-                    <footer className="bg-white border-t border-slate-200 px-4 py-2 shrink-0 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    <footer className="bg-white border-t border-slate-200 px-4 py-2 shrink-0 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest z-[120]">
                          <div>{config.buyerName} • Build Ready</div>
-                         <div>v2.5 FINAL • Poshn Internal</div>
+                         <div>v2.8 FINAL MASTER • Logic Sync Perfected</div>
                     </footer>
                 </div>
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
         root.render(<App />);
     </script>
 </body>

@@ -10,15 +10,19 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- PDF Generation Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Urbanist:wght@400;600;700;800&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; height: 100vh; overflow: hidden; }
         #root { height: 100%; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
         
-        /* New Preview Engine Style (Centered, No Zoom/Scale clipping) */
         .preview-wrapper {
             background: #cbd5e1;
             height: 100%;
@@ -26,6 +30,7 @@
             padding: 40px;
             display: flex;
             justify-content: center;
+            align-items: flex-start;
         }
 
         .preview-frame {
@@ -37,6 +42,20 @@
 
         .laptop-frame { width: 1280px; height: 2000px; } 
         .mobile-frame { width: 375px; height: 4000px; }
+
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.9);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: #42210B;
+            backdrop-filter: blur(4px);
+        }
     </style>
 </head>
 <body>
@@ -55,7 +74,7 @@
                 contactEmail: 'rishabhsharma@poshn.co',
                 showWorkingModel: true,
                 workingModelDays: '3rd',
-                selectedPillars: ['Vendor Management', 'Reconciliation', 'Immediate Vendor Payments', 'Compliances'],
+                selectedPillars: ['Vendor Management', 'Reconciliation', 'Rapid Liquidity', 'Compliances'],
                 selectedUSPs: ['3-7 Days TAT', 'Zero Training', 'Easy Migration', '365 Day Support', 'E2E Solution', 'Invoice Tracking'],
                 selectedGovernance: [
                     'Master Service Agreements',
@@ -72,11 +91,12 @@
 
             const [activeTab, setActiveTab] = useState('editor');
             const [viewport, setViewport] = useState('laptop');
+            const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
             const PILLAR_DEFS = {
                 'Vendor Management': { icon: 'users-gear', desc: 'Onboarding and relationship management for stable supply.' },
                 'Reconciliation': { icon: 'calculator', desc: 'Ensuring weight, quality, and billing accuracy at every step.' },
-                'Immediate Vendor Payments': { icon: 'hand-holding-dollar', desc: 'Ensuring immediate liquidity for vendors to maintain chain velocity.' },
+                'Rapid Liquidity': { icon: 'hand-holding-dollar', desc: 'Ensuring immediate liquidity for vendors to maintain chain velocity.' },
                 'Compliances': { icon: 'shield-halved', desc: 'Rigorous management of supplier KYC & digital invoices.' }
             };
 
@@ -130,7 +150,7 @@
 
             const finalHTML = useMemo(() => {
                 const pillarsHtml = config.selectedPillars.map(p => `
-            <div class="tile stagger-child">
+            <div class="tile active">
                 <div class="icon-box"><i class="fa-solid fa-${PILLAR_DEFS[p].icon}"></i></div>
                 <div class="text-box">
                     <h3>${p}</h3>
@@ -139,7 +159,7 @@
             </div>`).join('');
 
                 const uspsHtml = config.selectedUSPs.map(u => `
-            <div class="tile stagger-child">
+            <div class="tile active">
                 <div class="icon-box"><i class="fa-solid fa-${USP_DEFS[u].icon}"></i></div>
                 <div class="text-box">
                     <h3>${u}</h3>
@@ -156,7 +176,7 @@
                 const tiersHtml = config.selectedTiers.map(t => {
                     const d = TIER_DEFS[t];
                     return `
-            <div class="tier-card stagger-child ${d.featured ? 'featured' : ''}">
+            <div class="tier-card active ${d.featured ? 'featured' : ''}">
                 <h3>${t}</h3>
                 <div class="tier-rate">
                     ${d.rate}${d.secondaryRate ? `<span style="font-size: 0.45em; vertical-align: middle; margin-left: 5px; opacity: 0.7; font-weight: 400;"> - ${d.secondaryRate}</span>` : ''}
@@ -172,32 +192,32 @@
                 const storiesHtml = config.selectedStories.map(s => {
                     const d = STORY_DEFS[s];
                     return `
-            <div class="story-card stagger-child" style="background: var(--white); padding: 35px; border-radius: 30px; border: 1px solid var(--accent-muted); flex: 1 1 45%;">
-                <div class="badge" style="background: var(--accent-tan); color: white; margin-bottom: 20px; font-size: 1.1rem; padding: 10px 20px; border-radius: 10px; width: fit-content; display: inline-block; font-weight: 800; box-shadow: 0 4px 12px rgba(212, 163, 115, 0.3); text-transform: uppercase;">${d.badge}</div>
-                <h3 style="font-size: 24px; margin-bottom: 15px;">${d.title}</h3>
-                <p style="font-size: 16px; line-height: 1.6; opacity: 0.8;">${d.content}</p>
-            </div>`;
+    <div class="story-card active" style="background: var(--white); padding: 35px; border-radius: 30px; border: 1px solid var(--accent-muted); flex: 1 1 45%;">
+        <div class="badge" style="background: var(--accent-tan); color: white; margin-bottom: 20px; font-size: 1.1rem; padding: 10px 20px; border-radius: 10px; width: fit-content; display: inline-block; font-weight: 800; box-shadow: 0 4px 12px rgba(212, 163, 115, 0.3); text-transform: uppercase;">${d.badge}</div>
+        <h3 style="font-size: 24px; margin-bottom: 15px;">${d.title}</h3>
+        <p style="font-size: 16px; line-height: 1.6; opacity: 0.8;">${d.content}</p>
+    </div>`;
                 }).join('');
 
                 const workingModelSlide = config.showWorkingModel ? `
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <h2 class="slide-title">The Working Model</h2>
         <p style="margin-top: -15px;">Seamless "Bill-to-Ship-to" Execution for ${config.buyerName}</p>
         <div class="timeline-box">
             <div class="timeline-line"></div>
-            <div class="timeline-step stagger-child">
+            <div class="timeline-step active">
                 <div class="step-num">1</div>
                 <div class="text-box"><h3>Order Alignment</h3><p>${config.buyerName} confirms rate/qty with vendors; aligns with Poshn.</p></div>
             </div>
-            <div class="timeline-step stagger-child">
+            <div class="timeline-step active">
                 <div class="step-num">2</div>
                 <div class="text-box"><h3>Billing Structure</h3><p>Vendor bills Poshn; Poshn counter-bills ${config.buyerName}.</p></div>
             </div>
-            <div class="timeline-step stagger-child">
+            <div class="timeline-step active">
                 <div class="step-num">3</div>
                 <div class="text-box"><h3>Settlement</h3><p>Poshn pays 100% to vendor on ${config.workingModelDays} day of quality report.</p></div>
             </div>
-            <div class="timeline-step stagger-child">
+            <div class="timeline-step active">
                 <div class="step-num">4</div>
                 <div class="text-box"><h3>Final Closure</h3><p>${config.buyerName} pays Poshn after agreed payment days from GRN.</p></div>
             </div>
@@ -228,12 +248,6 @@
         .reveal.active { opacity: 1; transform: translateY(0); }
         .stagger-child { opacity: 0; transform: translateY(20px); transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1); }
         .active .stagger-child { opacity: 1; transform: translateY(0); }
-        .active .stagger-child:nth-child(1) { transition-delay: 0.1s; }
-        .active .stagger-child:nth-child(2) { transition-delay: 0.2s; }
-        .active .stagger-child:nth-child(3) { transition-delay: 0.3s; }
-        .active .stagger-child:nth-child(4) { transition-delay: 0.4s; }
-        .active .stagger-child:nth-child(5) { transition-delay: 0.5s; }
-        .active .stagger-child:nth-child(6) { transition-delay: 0.6s; }
 
         .slide-container { width: 95%; max-width: 1280px; min-height: 720px; background-color: var(--bg-cream); position: relative; overflow: hidden; display: flex; flex-direction: column; padding: 40px 60px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); border-radius: 12px; margin-bottom: 40px; }
         .slide-container::before { content: ''; position: absolute; top: -100px; right: -100px; width: 400px; height: 400px; background: var(--accent-muted); border-radius: 50%; opacity: 0.3; z-index: 0; }
@@ -242,13 +256,14 @@
 
         h1 { font-family: var(--font-title); font-size: clamp(48px, 8vw, 84px); font-weight: 700; margin: 0; line-height: 1.1; color: var(--text-dark); }
         h2.slide-title { font-family: var(--font-title); font-size: clamp(32px, 5vw, 42px); font-weight: 700; margin-bottom: 20px; border-bottom: 3px solid var(--accent-tan); width: fit-content; padding-bottom: 8px; }
-        h3 { font-family: var(--font-title); font-size: clamp(20px, 4vw, 24px); font-weight: 600; margin-bottom: 8px; }
+        h3 { font-family: var(--font-title); font-size: clamp(20px, 4vw, 24px); font-weight: 600; margin-bottom: 10px; }
         p { font-size: clamp(15px, 2.2vw, 17px); line-height: 1.4; margin-bottom: 10px; }
         .centered-content { flex-grow: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; flex-grow: 1; }
 
         .tile-grid { display: grid; grid-template-columns: repeat(${config.selectedPillars.length <= 4 ? 4 : 3}, 1fr); gap: 15px; width: 100%; margin-top: 15px; }
-        .slide-container:nth-of-type(7) .tile-grid { grid-template-columns: repeat(3, 1fr); }
+        /* FORCED 3-COL GRID FOR USPs */
+        .usp-grid { grid-template-columns: repeat(3, 1fr) !important; }
         
         .tile-grid:has(.tile:nth-child(1):last-child) { grid-template-columns: 1fr; }
         .tile-grid:has(.tile:nth-child(2):last-child) { grid-template-columns: 1fr 1fr; }
@@ -266,8 +281,6 @@
         .tier-rate { font-family: var(--font-title); font-size: clamp(28px, 4vw, 42px); font-weight: 800; margin-bottom: 5px; color: var(--accent-tan); line-height: 1; }
         .feature-list { list-style: none; padding: 15px 0px; margin: 0 0 15px 0; font-size: 13px; flex-grow: 1; }
         .feature-list li { margin-bottom: 6px; display: flex; align-items: flex-start; gap: 8px; }
-
-        .tcs-note { font-size: 10px; font-style: italic; opacity: 0.6; margin-top: 10px; }
 
         .stats-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 25px; text-align: left; }
         .stat-card { background: var(--white); padding: 20px; border-radius: 12px; border: 1px solid var(--accent-muted); min-height: 110px; display: flex; flex-direction: column; justify-content: center; }
@@ -298,8 +311,10 @@
             .two-column { grid-template-columns: 1fr; gap: 20px; text-align: left !important; }
             .hide-mobile { display: none; }
             .tile-grid, .commercial-grid, .story-container { display: flex; flex-direction: column; gap: 15px; }
-            .tile { flex: 1 1 100%; flex-direction: row; align-items: center !important; text-align: left !important; padding: 20px; gap: 20px; border-radius: 15px; }
-            .tile h3 { min-height: auto; justify-content: flex-start; display: block; }
+            /* MOBILE ALIGNMENT FIX: icon-box fixed width + text-box alignment */
+            .tile { flex-direction: row !important; align-items: center !important; text-align: left !important; padding: 20px; gap: 20px; border-radius: 15px; display: grid !important; grid-template-columns: 60px 1fr !important; }
+            .tile h3 { min-height: auto; justify-content: flex-start; display: block; margin: 0 0 5px; }
+            .tile .icon-box { flex-shrink: 0; width: 50px; margin: 0; height: auto; }
             .timeline-box { display: flex; flex-direction: column; gap: 40px; margin-top: 30px; width: 100% !important; }
             .timeline-line { width: 4px; height: 100%; left: 28px; top: 0; }
             .timeline-step { display: flex; flex-direction: row; align-items: center !important; text-align: left !important; gap: 25px; width: 100% !important; }
@@ -307,19 +322,16 @@
             .timeline-step .text-box { flex: 1; padding-top: 0; }
             .tier-card { flex: 1 1 100%; width: 100%; padding: 25px; }
             .comp-container { grid-template-columns: 1fr; gap: 15px; }
-            .icon-box {flex-shrink: 0; width: 50px;}
         }
 
         @media print {
             body { background: white; padding: 0; }
             .slide-container { box-shadow: none; border-radius: 0; margin: 0; border: none; page-break-after: always; min-height: 100vh; }
         }
-        .highlight { color: var(--accent-tan); font-weight: 700; }
-        .badge { display: inline-block; padding: 5px 10px; border-radius: 5px; font-weight: 700; font-size: 11px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <div class="centered-content">
             <div class="badge" style="background: var(--accent-muted);">STRATEGIC PARTNERSHIP</div>
             <h1>Your Integrated <br><span class="highlight">Procurement</span> Arm</h1>
@@ -327,17 +339,17 @@
         </div>
     </div>
 
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <h2 class="slide-title">Who We Are?</h2>
         <div class="two-column">
             <div>
                 <p class="highlight" style="font-size: 22px;">Simplifying the Food Processing Ecosystem</p>
                 <p>Poshn is a tech-led procurement platform designed to bring transparency and efficiency to fragmented food processing and bioenergy supply chains.</p>
                 <div class="stats-grid">
-                    <div class="stat-card stagger-child"><span class="stat-value">₹1150 Cr+</span><span class="stat-label">Annual Revenue</span></div>
-                    <div class="stat-card stagger-child"><span class="stat-value">500+</span><span class="stat-label">Active Clients</span></div>
-                    <div class="stat-card stagger-child"><span class="stat-value">$8M+</span><span class="stat-label">Equity Raised</span></div>
-                    <div class="stat-card stagger-child"><span class="stat-value">Tech-Driven</span><span class="stat-label">Procurement Logic</span></div>
+                    <div class="stat-card active"><span class="stat-value">₹1150 Cr+</span><span class="stat-label">Annual Revenue</span></div>
+                    <div class="stat-card active"><span class="stat-value">500+</span><span class="stat-label">Active Clients</span></div>
+                    <div class="stat-card active"><span class="stat-value">$8M+</span><span class="stat-label">Equity Raised</span></div>
+                    <div class="stat-card active"><span class="stat-value">Tech-Driven</span><span class="stat-label">Procurement Logic</span></div>
                 </div>
             </div>
             <div style="text-align: center;" class="hide-mobile">
@@ -346,7 +358,7 @@
         </div>
     </div>
 
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <h2 class="slide-title">Core Service Pillars</h2>
         <div class="tile-grid">${pillarsHtml}</div>
         <div class="two-column" style="margin-top: 30px; flex-grow: 0;">
@@ -357,11 +369,11 @@
 
     ${workingModelSlide}
 
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <h2 class="slide-title">Associated Partners</h2>
         <div class="content-area" style="flex-grow: 1; display: flex; flex-direction: column; justify-content: center;">
             <p>Trusted by Industry Leaders to manage massive procurement volumes.</p>
-            <div class="table-wrapper stagger-child" style="overflow-x: auto;">
+            <div class="table-wrapper active" style="overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; background: var(--white); border-radius: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.02); min-width: 500px;">
                     <thead>
                         <tr style="background: var(--text-dark); color: var(--white);">
@@ -380,56 +392,49 @@
             </div>
         </div>
     </div>
-    
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <h2 class="slide-title">Unprecedented Scaling</h2>
         <div class="story-container">
             ${storiesHtml}
         </div>
     </div>
-
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <h2 class="slide-title">The Poshn Edge</h2>
-        <div class="tile-grid">${uspsHtml}</div>
+        <div class="tile-grid usp-grid">${uspsHtml}</div>
     </div>
-
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <h2 class="slide-title">Compliances & Scope</h2>
         <div class="centered-content" style="justify-content: center;">
             <div class="comp-container">
-                <div class="comp-box stagger-child">
+                <div class="comp-box active">
                     <h3 class="highlight"><i class="fa-solid fa-handshake"></i> Governance</h3>
                     <div class="comp-list">${govHtml}</div>
                 </div>
-                <div class="comp-box dark stagger-child">
+                <div class="comp-box dark active">
                     <h3 style="color: var(--accent-tan);"><i class="fa-solid fa-ban"></i> Exclusions</h3>
                     <div class="comp-list">${exclHtml}</div>
                 </div>
             </div>
         </div>
     </div>
-
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <h2 class="slide-title">Commercial Proposal</h2>
         <div class="commercial-grid">${tiersHtml}</div>
         <div style="text-align: center; margin-top: 25px; opacity: 0.6; font-style: italic; font-size: 13px;">
             <p>"Scalable, tiered pricing designed for long-term supply chain transformation."</p>
         </div>
     </div>
-
-    <div class="slide-container reveal">
+    <div class="slide-container active">
         <div class="centered-content">
             <h1 style="margin-bottom: 20px;">Thank <span class="highlight">You</span></h1>
             <p style="font-size: 22px;">Transforming the Food Industry Supply Chain.</p>
             <div style="margin-top: 40px; font-family: var(--font-title); font-size: 18px; font-weight: 600;">www.poshn.co | ${config.contactEmail}</div>
         </div>
     </div>
-
     <script>
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) entry.target.classList.add('active');
-                else entry.target.classList.remove('active');
             });
         }, { threshold: 0.15 });
         document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
@@ -439,7 +444,7 @@
             }, [config]);
 
             const handleDownloadHTML = () => {
-                const blob = new Blob([finalHTML], { type: 'text/html' });
+                const blob = new Blob([finalHTML], { type: 'text/html;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
@@ -448,6 +453,48 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
+            };
+
+            const handleDownloadPDF = async () => {
+                setIsGeneratingPDF(true);
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const pdfCaptureCSS = `
+                        <style>
+                            .slide-container { width: 1280px !important; min-height: 720px !important; margin: 0 !important; }
+                            h1 { font-size: 72px !important; letter-spacing: normal !important; }
+                            h2.slide-title { font-size: 38px !important; letter-spacing: normal !important; }
+                            h3 { font-size: 24px !important; letter-spacing: normal !important; }
+                            p { font-size: 16px !important; letter-spacing: normal !important; }
+                            .tile-grid { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; gap: 15px !important; }
+                            .usp-grid { grid-template-columns: repeat(3, 1fr) !important; }
+                            .tile { flex: 1 1 23% !important; margin: 5px !important; }
+                            .tier-rate { font-size: 38px !important; }
+                        </style>
+                    `;
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.width = '1280px';
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    tempDiv.style.top = '0';
+                    tempDiv.innerHTML = pdfCaptureCSS + finalHTML;
+                    document.body.appendChild(tempDiv);
+                    await new Promise(resolve => setTimeout(resolve, 2500));
+                    const slides = tempDiv.querySelectorAll('.slide-container');
+                    const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1280, 720], compress: true });
+                    for (let i = 0; i < slides.length; i++) {
+                        const canvas = await html2canvas(slides[i], { scale: 3, useCORS: true, backgroundColor: '#FFFBF2' });
+                        const imgData = canvas.toDataURL('image/jpeg', 1.0);
+                        if (i > 0) pdf.addPage([1280, 720], 'landscape');
+                        pdf.addImage(imgData, 'JPEG', 0, 0, 1280, 720);
+                    }
+                    pdf.save("Poshn_Proposal_" + config.buyerName.replace(/\s+/g, '_') + ".pdf");
+                    document.body.removeChild(tempDiv);
+                } catch (error) {
+                    console.error("PDF generation failed:", error);
+                } finally {
+                    setIsGeneratingPDF(false);
+                }
             };
 
             const toggleItem = (listKey, item) => {
@@ -459,7 +506,12 @@
 
             return (
                 <div className="h-screen flex flex-col overflow-hidden bg-slate-50">
-                    {/* Fixed Main Navbar */}
+                    {isGeneratingPDF && (
+                        <div className="loading-overlay shadow-2xl">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D4A373] mb-4"></div>
+                            <p className="text-xl">Processing Pixel-Perfect PDF...</p>
+                        </div>
+                    )}
                     <header className="bg-white border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row items-center justify-between z-[300] gap-4 md:gap-0 shadow-sm shrink-0">
                         <div className="flex items-center gap-3 w-full md:w-auto">
                             <div className="bg-[#42210B] p-2 rounded-lg text-[#D4A373]"><Icon name="bolt" /></div>
@@ -470,9 +522,7 @@
                             <button onClick={() => setActiveTab('preview')} className={"flex-1 md:flex-none px-6 py-2 rounded-md text-sm font-semibold transition-all " + (activeTab === 'preview' ? 'bg-white text-[#42210B] shadow-sm' : 'text-slate-500')}>Preview</button>
                         </div>
                     </header>
-
                     <main className="flex-1 overflow-hidden relative">
-                        {/* CONFIG PANEL */}
                         <div className={"h-full overflow-y-auto p-4 md:p-8 custom-scrollbar " + (activeTab === 'editor' ? 'block' : 'hidden')}>
                             <div className="max-w-4xl mx-auto space-y-8 pb-24 pt-4">
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
@@ -488,7 +538,6 @@
                                         </div>
                                     </div>
                                 </section>
-
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
                                     <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="layer-group" className="text-[#D4A373]" /> 2. Service Pillars</h2>
                                     <div className="grid grid-cols-2 gap-4">
@@ -498,27 +547,23 @@
                                                     <span className="text-sm font-bold">{p}</span>
                                                     {config.selectedPillars.includes(p) && <Icon name="check" className="text-[#D4A373]" />}
                                                 </div>
-                                                <p className="text-[11px] text-slate-500 leading-tight">{PILLAR_DEFS[p].desc}</p>
                                             </button>
                                         ))}
                                     </div>
                                 </section>
-
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
                                     <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="timeline" className="text-[#D4A373]" /> 3. Working Model</h2>
                                     <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between border mb-4">
-                                        <p className="font-bold text-sm">Include Working Model Slide</p>
+                                        <p className="font-bold text-sm">Include Slide</p>
                                         <input type="checkbox" checked={config.showWorkingModel} onChange={(e) => setConfig({...config, showWorkingModel: e.target.checked})} className="w-6 h-6 accent-[#D4A373]" />
                                     </div>
                                     {config.showWorkingModel && (
-                                        <div className="p-4 border-l-4 border-[#D4A373] bg-[#FFFBF2]/30 rounded-r-2xl flex items-center gap-3">
-                                            <span className="text-sm">Settlement on</span>
-                                            <input type="text" value={config.workingModelDays} onChange={(e) => setConfig({...config, workingModelDays: e.target.value})} className="w-20 border p-1.5 rounded-lg text-center font-bold" />
-                                            <span className="text-sm">day of quality report.</span>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-bold uppercase text-slate-400">Settlement Day Config</label>
+                                            <input type="text" value={config.workingModelDays} onChange={(e) => setConfig({...config, workingModelDays: e.target.value})} className="w-full border p-3 rounded-xl focus:ring-2 focus:ring-[#D4A373]" placeholder="e.g. 3rd, 5th" />
                                         </div>
                                     )}
                                 </section>
-
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
                                     <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="star" className="text-[#D4A373]" /> 4. Success Stories</h2>
                                     <div className="grid grid-cols-2 gap-4">
@@ -532,9 +577,8 @@
                                         ))}
                                     </div>
                                 </section>
-
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="award" className="text-[#D4A373]" /> 5. The Poshn Edge</h2>
+                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="award" className="text-[#D4A373]" /> 5. USPs</h2>
                                     <div className="grid grid-cols-2 gap-4">
                                         {Object.keys(USP_DEFS).map(u => (
                                             <button key={u} onClick={() => toggleItem('selectedUSPs', u)} className={"p-4 rounded-2xl border text-left transition-all " + (config.selectedUSPs.includes(u) ? 'border-[#D4A373] bg-[#FFFBF2] ring-1 ring-[#D4A373]' : 'border-slate-100')}>
@@ -542,12 +586,10 @@
                                                     <span className="text-sm font-bold">{u}</span>
                                                     {config.selectedUSPs.includes(u) && <Icon name="check" className="text-[#D4A373]" />}
                                                 </div>
-                                                <p className="text-[11px] text-slate-500 leading-tight">{USP_DEFS[u].desc}</p>
                                             </button>
                                         ))}
                                     </div>
                                 </section>
-
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
                                     <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="building-shield" className="text-[#D4A373]" /> 6. Governance</h2>
                                     <div className="space-y-2">
@@ -559,7 +601,6 @@
                                         ))}
                                     </div>
                                 </section>
-
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
                                     <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="ban" className="text-[#D4A373]" /> 7. Exclusions</h2>
                                     <div className="space-y-2">
@@ -571,9 +612,8 @@
                                         ))}
                                     </div>
                                 </section>
-
                                 <section className="bg-white p-6 md:p-8 rounded-3xl border border-slate-200 shadow-sm">
-                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="hand-holding-dollar" className="text-[#D4A373]" /> 8. Commercials</h2>
+                                    <h2 className="text-xl font-bold mb-6 flex items-center gap-3 text-slate-800"><Icon name="hand-holding-dollar" className="text-[#D4A373]" /> 8. Proposals</h2>
                                     <div className="flex flex-wrap gap-3">
                                         {Object.keys(TIER_DEFS).map(t => (
                                             <button key={t} onClick={() => toggleItem('selectedTiers', t)} className={"px-4 py-3 md:px-6 md:py-4 border-2 rounded-2xl text-sm font-bold transition-all " + (config.selectedTiers.includes(t) ? 'bg-[#D4A373] text-white border-[#D4A373] shadow-lg shadow-[#D4A373]/20' : 'border-slate-100 text-slate-400')}>{t}</button>
@@ -582,37 +622,35 @@
                                 </section>
                             </div>
                         </div>
-
-                        {/* PREVIEW TAB */}
                         <div className={"h-full flex flex-col bg-slate-200 " + (activeTab === 'preview' ? 'flex' : 'hidden')}>
                             <div className="bg-white border-b border-slate-300 p-4 flex items-center justify-between shrink-0 shadow-sm z-50">
                                 <div className="flex bg-slate-100 p-1 rounded-lg">
                                     <button onClick={() => setViewport('laptop')} className={"px-6 py-1.5 rounded md:text-sm font-bold transition-all " + (viewport === 'laptop' ? 'bg-white shadow-sm' : 'text-slate-400')}>Laptop</button>
                                     <button onClick={() => setViewport('mobile')} className={"px-6 py-1.5 rounded md:text-sm font-bold transition-all " + (viewport === 'mobile' ? 'bg-white shadow-sm' : 'text-slate-400')}>Mobile</button>
                                 </div>
-                                <button onClick={handleDownloadHTML} className="bg-[#42210B] px-6 py-2 rounded-lg text-sm font-bold text-white hover:opacity-90 transition-all flex items-center gap-2">
-                                    <Icon name="download" className="text-[#D4A373]" /> Download HTML
-                                </button>
+                                <div className="flex gap-2">
+                                    <button onClick={handleDownloadPDF} className="bg-[#D4A373] px-6 py-2 rounded-lg text-sm font-bold text-white hover:opacity-90 transition-all flex items-center gap-2 shadow-sm">
+                                        <Icon name="file-pdf" /> Download PDF
+                                    </button>
+                                    <button onClick={handleDownloadHTML} className="bg-[#42210B] px-6 py-2 rounded-lg text-sm font-bold text-white hover:opacity-90 transition-all flex items-center gap-2">
+                                        <Icon name="download" className="text-[#D4A373]" /> Download HTML
+                                    </button>
+                                </div>
                             </div>
                             <div className="flex-1 overflow-hidden">
                                 <div className="preview-wrapper custom-scrollbar">
-                                    <iframe 
-                                        srcDoc={finalHTML} 
-                                        className={"preview-frame " + (viewport === 'mobile' ? 'mobile-frame' : 'laptop-frame')}
-                                    />
+                                    <iframe srcDoc={finalHTML} className={"preview-frame " + (viewport === 'mobile' ? 'mobile-frame' : 'laptop-frame')} />
                                 </div>
                             </div>
                         </div>
                     </main>
-
                     <footer className="bg-white border-t border-slate-200 px-4 py-2 shrink-0 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest z-[120]">
                          <div>{config.buyerName} • Build Ready</div>
-                         <div>v2.8 FINAL MASTER • Logic Sync Perfected</div>
+                         <div>v3.0.1 FINAL MASTER • Mobile Layout & USP Grid Fixed</div>
                     </footer>
                 </div>
             );
         };
-
         const container = document.getElementById('root');
         const root = ReactDOM.createRoot(container);
         root.render(<App />);
